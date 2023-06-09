@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+
+import pandas as pd
+
+
+TARGET_TABLE_COLUMNS = ("Year", "Author", "Novel")
+NEBULA_NOVELS_URL = "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel"
+
+
+def fetch_url(url):
+    print(f"Fetching {url}...")
+    tables = pd.read_html(url, flavor="bs4")
+    return tables
+
+
+def find_target_table(tables):
+    target_table = None
+    for table in tables:
+        if all([column in table.columns for column in TARGET_TABLE_COLUMNS]):
+            target_table = table
+            break
+    else:
+        raise ValueError("Couldn't find target table")
+    return target_table
+
+
+def drop_unwanted_columns(table):
+    for column in table.columns:
+        if column not in TARGET_TABLE_COLUMNS:
+            print(f"Dropping column {column}")
+            table = table.drop(column, axis=1)
+    return table
+
+
+def main():
+    books = []
+    for url in (NEBULA_NOVELS_URL,):
+        tables = fetch_url(url)
+        table = find_target_table(tables)
+        table = drop_unwanted_columns(table)
+
+        num_rows = table.shape[0]
+        award_col = ["Nebula Novel" for _ in range(num_rows)]
+        table = table.assign(Award=award_col)
+        import pdb; pdb.set_trace()
+        winner_col = ["Winner" if row[1]["Author"].endswith("*") else "Nominee" for row in table.iterrows()]
+        table = table.assign(Winner=winner_col)
+
+        print("\n".join([f"({row[1]['Year']}) {row[1]['Author']} - {row[1]['Novel']}" for row in table.iterrows() if row[1]["Winner"] == "Winner"]))
+
+        for row in table.iterrows():
+            book = {}
+
+        import pdb; pdb.set_trace()
+
+
+if __name__ == "__main__":
+    main()
