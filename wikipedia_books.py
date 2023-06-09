@@ -39,20 +39,29 @@ def main():
         tables = fetch_url(url)
         table = find_target_table(tables)
         table = drop_unwanted_columns(table)
-
         num_rows = table.shape[0]
-        award_col = ["Nebula Novel" for _ in range(num_rows)]
+
+        # Populate new columns
+        award_col = ["Nebula" for _ in range(num_rows)]
         table = table.assign(Award=award_col)
-        import pdb; pdb.set_trace()
-        winner_col = ["Winner" if row[1]["Author"].endswith("*") else "Nominee" for row in table.iterrows()]
+
+        category_col = ["Novel" for _ in range(num_rows)]
+        table = table.assign(Category=category_col)
+
+        winner_col = []
+        for row in table.iterrows():
+            if row[1]["Author"].endswith("*"):
+                winner_col.append("Winner")
+                # Also modify Author to remove marker
+                table.at[row[0], "Author"] = table.at[row[0], "Author"][:-1]
+            else:
+                winner_col.append("Nominee")
         table = table.assign(Winner=winner_col)
 
-        print("\n".join([f"({row[1]['Year']}) {row[1]['Author']} - {row[1]['Novel']}" for row in table.iterrows() if row[1]["Winner"] == "Winner"]))
 
-        for row in table.iterrows():
-            book = {}
-
-        import pdb; pdb.set_trace()
+        # Debugggggg printffffffff
+        #print("\n".join([f"({row[1]['Year']}) {row[1]['Author']} - {row[1]['Novel']}" for row in table.iterrows() if row[1]["Winner"] != "Winner"]))
+        print(table)
 
 
 if __name__ == "__main__":
