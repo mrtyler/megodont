@@ -1,17 +1,29 @@
 #!/usr/bin/env python
 
 
+# TODO
+## clean up years [e]
+## clean up cixin liu (Chinese) lol
+## last, first
+## combine like books
+## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
+## add novellas lists
+## add locus lists? others?
+
+
+import re
+
 import pandas as pd
 
 
 ARTICLES = [
-    {
-        "author_column": "Author",
-        "award": "Nebula",
-        "category": "Novel",
-        "target_table_columns": ("Year", "Author", "Novel"),
-        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
-    },
+###    {
+###        "author_column": "Author",
+###        "award": "Nebula",
+###        "category": "Novel",
+###        "target_table_columns": ("Year", "Author", "Novel"),
+###        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
+###    },
     {
         "author_column": "Author(s)",
         "award": "Hugo",
@@ -47,8 +59,11 @@ def drop_unwanted_columns(table, article):
     return table
 
 
+def resolve_duplicates(table):
+    return table
+
+
 def main():
-    books = []
     for article in ARTICLES:
         tables = fetch_url(article["url"])
         table = find_target_table(tables, article)
@@ -71,6 +86,18 @@ def main():
             else:
                 winner_col.append("Nominee")
         table = table.assign(Winner=winner_col)
+
+### WIP. I don't think this works, and I want to look at DataFrame.replace() anyway.
+###        subs = [
+###            (re.compile(r"\[\s\+\]$"), r""),
+###        ]
+###        compiled_subs = [(re.compile(sub[0]), sub[1]) for sub in subs]
+###        for row in table.iterrows():
+###            for sub in compiled_subs:
+###                row[1][article["author_column"]] = sub[0].sub(sub[1], row[1][article["author_column"]])
+
+        table = resolve_duplicates(table)
+
 
 
         # Debugggggg printffffffff
