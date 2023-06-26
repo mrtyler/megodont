@@ -2,8 +2,6 @@
 
 
 # TODO
-## clean up years [e]
-## clean up cixin liu (Chinese) lol
 ## last, first
 ## combine like books
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
@@ -17,13 +15,13 @@ import pandas as pd
 
 
 ARTICLES = [
-###    {
-###        "author_column": "Author",
-###        "award": "Nebula",
-###        "category": "Novel",
-###        "target_table_columns": ("Year", "Author", "Novel"),
-###        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
-###    },
+    {
+        "author_column": "Author",
+        "award": "Nebula",
+        "category": "Novel",
+        "target_table_columns": ("Year", "Author", "Novel"),
+        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
+    },
     {
         "author_column": "Author(s)",
         "award": "Hugo",
@@ -70,6 +68,10 @@ def main():
         table = drop_unwanted_columns(table, article)
         num_rows = table.shape[0]
 
+        table = table.replace(to_replace=r" \(Chinese\)", value="", regex=True)
+        table = table.replace(to_replace=r" \(French\)", value="", regex=True)
+        table = table.replace(to_replace=r"\[[a-z]\]", value="", regex=True)
+
         # Populate new columns
         award_col = [article["award"] for _ in range(num_rows)]
         table = table.assign(Award=award_col)
@@ -87,15 +89,6 @@ def main():
                 winner_col.append("Nominee")
         table = table.assign(Winner=winner_col)
 
-### WIP. I don't think this works, and I want to look at DataFrame.replace() anyway.
-###        subs = [
-###            (re.compile(r"\[\s\+\]$"), r""),
-###        ]
-###        compiled_subs = [(re.compile(sub[0]), sub[1]) for sub in subs]
-###        for row in table.iterrows():
-###            for sub in compiled_subs:
-###                row[1][article["author_column"]] = sub[0].sub(sub[1], row[1][article["author_column"]])
-
         table = resolve_duplicates(table)
 
 
@@ -103,6 +96,9 @@ def main():
         # Debugggggg printffffffff
         #print("\n".join([f"({row[1]['Year']}) {row[1][article["author_column"]]} - {row[1]['Novel']}" for row in table.iterrows() if row[1]["Winner"] != "Winner"]))
         print(table.to_csv())
+        # Debugggggg file writeeee
+        with open(f"{article['award']}.{article['category']}.csv", "w") as ff:
+            ff.write(table.to_csv())
 
 
 if __name__ == "__main__":
