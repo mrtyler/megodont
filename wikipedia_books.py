@@ -60,7 +60,11 @@ def drop_unwanted_columns(table, article):
 
 def resolve_duplicates(collected_table, table):
     for row in table.iterrows():
-        collected_table = pd.concat([collected_table, row[1]])
+        import pdb; pdb.set_trace()
+        if collected_table[collected_table['Novel'] == row[1]['Novel']].any():
+            collected_table.loc[row[0]]['Significance'] += row[1]['Significance']
+        else:
+            collected_table.loc[len(collected_table)] = row[1]
     return collected_table
 
 
@@ -120,6 +124,9 @@ def main():
             value={article["author_column"]: r'\2, \1'},
             regex=True,
         )
+
+        print("Renaming author column")
+        table = table.rename(columns={article["author_column"]: ARTICLES[0]["author_column"]})
 
         # Combine like entries
         #
