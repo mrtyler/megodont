@@ -60,9 +60,11 @@ def drop_unwanted_columns(table, article):
 
 def resolve_duplicates(collected_table, table):
     for row in table.iterrows():
-        import pdb; pdb.set_trace()
-        if collected_table[collected_table['Novel'] == row[1]['Novel']].any():
-            collected_table.loc[row[0]]['Significance'] += row[1]['Significance']
+        if row[1]['Novel'] in collected_table['Novel'].values:
+            # Make sure Author also lines up. Mostly this is for books with
+            # multiple authors (which will live as separate entities for now at
+            # least)
+            collected_table.loc[row[0], 'Significance'] += row[1]['Significance']
         else:
             collected_table.loc[len(collected_table)] = row[1]
     return collected_table
@@ -112,7 +114,7 @@ def main():
         empty_col = ["" for _ in range(num_rows)]
         table = table.assign(Notes=empty_col)
 
-        # first middle middle* last -> last, first middle middle*
+        # first middle middle+ last -> last, first middle middle+
         #
         # Do this after special \* processing for winner
         #
