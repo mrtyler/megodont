@@ -2,15 +2,16 @@
 
 
 # TODO
-## fix NaN when combining significance etc
 ## better/different solution for combining award/category/winner? (novella is coming, will there be overlap?)
 
 ## guin, ursula k. le
+## one off years (diamond age, paladin of souls)
+### will have consequences for the moon is a harsh mistress hugo double-dip (dune world/dune similar but name isn't the same so slightly different less impactful problem)
+## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
 
 ## move custom columns to the very end, after collation and such
 ## col for ReadDate or ReadOn or When or something but they're all long and/or confusing
 
-## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
 ## add novellas lists
 ## add locus lists? others?
 
@@ -76,11 +77,22 @@ def resolve_duplicates(collected_table, table):
         on=join_columns,
         how="outer",
     )
+    # merge() leaves NaN for items that don't appear in both lists. Fill with
+    # sensible defaults so later concatenation makes sense (and doesn't result
+    # in NaN everywhere)
+    fill_values = {
+        "Significance_x": 0,
+        "Award_x": "",
+        "Winner_x": "",
+        "Significance_y": 0,
+        "Award_y": "",
+        "Winner_y": "",
+    }
+    new_table = new_table.fillna(value=fill_values)
     for column in ("Significance", "Award", "Winner"):
         new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
-    import pdb; pdb.set_trace()
     return new_table
 
 
