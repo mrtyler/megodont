@@ -9,7 +9,7 @@
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
 
 ## add novellas lists -- meh, maybe separate file here
-## add locus lists? others?
+## locus everything is a nominee -> everything is a winner
 
 
 import re
@@ -22,33 +22,51 @@ ARTICLES = [
         "author_column": "Author(s)",
         "award": "Hugo",
         "category": "Novel",
+        "nominee_score": 4,
         "target_table_columns": ("Year", "Author(s)", "Novel"),
         "title_column": "Novel",
         "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novel",
+        "winner_score": 10,
     },
     {
         "author_column": "Author",
         "award": "Nebula",
         "category": "Novel",
+        "nominee_score": 4,
         "target_table_columns": ("Year", "Author", "Novel"),
         "title_column": "Novel",
         "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
+        "winner_score": 10,
+    },
+    {
+        "author_column": "Author",
+        "award": "Locus",
+        "category": "Novel",
+        "nominee_score": 2,
+        "target_table_columns": ("Year", "Author", "Nominated Work"),
+        "title_column": "Nominated Work",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Novel",
+        "winner_score": 4,
     },
 ###    {
 ###        "author_column": "Author(s)",
 ###        "award": "Hugo",
 ###        "category": "Novella",
+###        "nominee_score": 2,
 ###        "target_table_columns": ("Year", "Author(s)", "Novella"),
 ###        "title_column": "Novella",
 ###        "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novella",
+###        "winner_score": 5,
 ###    },
 ###    {
 ###        "author_column": "Author",
 ###        "award": "Nebula",
 ###        "category": "Novella",
+###        "nominee_score": 2,
 ###        "target_table_columns": ("Year", "Author", "Novella"),
 ###        "title_column": "Novella",
 ###        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novella",
+###        "winner_score": 5,
 ###    },
 ]
 
@@ -141,10 +159,10 @@ def main():
                 winner_col.append("Winner")
                 # Also modify Author to remove marker
                 table.at[row[0], article["author_column"]] = table.at[row[0], article["author_column"]][:-1]
-                significance_col.append(5)
+                significance_col.append(article["winner_score"])
             else:
                 winner_col.append("Nominee")
-                significance_col.append(2)
+                significance_col.append(article["nominee_score"])
         table = table.assign(Winner=winner_col)
         table = table.assign(Significance=significance_col)
 
