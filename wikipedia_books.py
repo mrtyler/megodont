@@ -59,15 +59,31 @@ def drop_unwanted_columns(table, article):
 
 
 def resolve_duplicates(collected_table, table):
-    for row in table.iterrows():
-        if row[1]['Novel'] in collected_table['Novel'].values:
-            # Make sure Author also lines up. Mostly this is for books with
-            # multiple authors (which will live as separate entities for now at
-            # least)
-            collected_table.loc[row[0], 'Significance'] += row[1]['Significance']
-        else:
-            collected_table.loc[len(collected_table)] = row[1]
-    return collected_table
+    # Workaround for "ValueError: You are trying to merge on int64 and object
+    # columns. If you wish to proceed you should use pd.concat" from
+    # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
+    for tt in (collected_table, table):
+        tt["Year"] = tt["Year"].astype(str)
+    join_columns = ["Year", "Author", "Novel", "Rating", "Notes"]
+    new_table = pd.merge(
+        collected_table,
+        table,
+        on=join_columns,
+        #left_on=join_columns,
+        #right_on=join_columns,
+    )
+    import pdb; pdb.set_trace()
+    return new_table
+
+###    for row in table.iterrows():
+###        if row[1]['Novel'] in collected_table['Novel'].values:
+###            # Make sure Author also lines up. Mostly this is for books with
+###            # multiple authors (which will live as separate entities for now at
+###            # least)
+###            collected_table.loc[row[0], 'Significance'] += row[1]['Significance']
+###        else:
+###            collected_table.loc[len(collected_table)] = row[1]
+###    return collected_table
 
 
 def main():
@@ -109,7 +125,8 @@ def main():
         table = table.assign(Significance=significance_col)
 
         print("Populating final new columns")
-        zero_col = [0 for _ in range(num_rows)]
+        # String 0 because of resolve_duplicates() things.
+        zero_col = ["0" for _ in range(num_rows)]
         table = table.assign(Rating=zero_col)
         empty_col = ["" for _ in range(num_rows)]
         table = table.assign(Notes=empty_col)
