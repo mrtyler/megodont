@@ -2,15 +2,13 @@
 
 
 # TODO
+## hugo first because hugo was first
+
 ## better/different solution for combining award/category/winner? (novella is coming, will there be overlap?)
 
-## guin, ursula k. le
 ## one off years (diamond age, paladin of souls)
 ### will have consequences for the moon is a harsh mistress hugo double-dip (dune world/dune similar but name isn't the same so slightly different less impactful problem)
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
-
-## move custom columns to the very end, after collation and such
-## col for ReadDate or ReadOn or When or something but they're all long and/or confusing
 
 ## add novellas lists
 ## add locus lists? others?
@@ -70,7 +68,7 @@ def resolve_duplicates(collected_table, table):
     # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
-    join_columns = ["Year", "Author", "Novel", "Category", "Rating", "Notes"]
+    join_columns = ["Year", "Author", "Novel", "Category"]
     new_table = pd.merge(
         collected_table,
         table,
@@ -134,13 +132,6 @@ def main():
         table = table.assign(Winner=winner_col)
         table = table.assign(Significance=significance_col)
 
-        print("Populating final new columns")
-        # String 0 because of resolve_duplicates() things.
-        zero_col = ["0" for _ in range(num_rows)]
-        table = table.assign(Rating=zero_col)
-        empty_col = ["" for _ in range(num_rows)]
-        table = table.assign(Notes=empty_col)
-
         # first middle middle+ last -> last, first middle middle+
         #
         # Do this after special \* processing for winner
@@ -153,6 +144,8 @@ def main():
             value={article["author_column"]: r'\2, \1'},
             regex=True,
         )
+        # Special case: Ursula K. Le Guin
+        table = table.replace("Guin, Ursula K. Le", "Le Guin, Ursula K.")
 
         print("Renaming author column")
         table = table.rename(columns={article["author_column"]: ARTICLES[0]["author_column"]})
@@ -167,19 +160,33 @@ def main():
             print("Folding table into collected_table")
             collected_table = resolve_duplicates(collected_table, table)
 
+    print("Populating final new columns")
+    collected_num_rows = collected_table.shape[0]
+    # String "0" because of resolve_duplicates() things
+    zero_col = ["0" for _ in range(collected_num_rows)]
+    collected_table = collected_table.assign(Rating=zero_col)
+    empty_col = ["" for _ in range(collected_num_rows)]
+    collected_table = collected_table.assign(WhenRead=empty_col)
+    collected_table = collected_table.assign(Notes=empty_col)
 
-
-        # Debugggggg printffffffff
-        #print("\n".join([f"({row[1]['Year']}) {row[1][article["author_column"]]} - {row[1]['Novel']}" for row in table.iterrows() if row[1]["Winner"] != "Winner"]))
-        # Debugggggg file writeeee
-        #with open(f"{article['award']}.{article['category']}.csv", "w") as ff:
-        #    ff.write(table.to_csv())
-
-
+    # Sort it out
+    #
+    # Handle year separately because we want oldest first (but other stuff is reverse sorted)
+    collected_table = collected_table.sort_values(
+        by=["Year"],
+    )
+    sort_cols = [
+        "Significance",
+        "Award",
+    ]
+    collected_table = collected_table.sort_values(
+        by=sort_cols,
+        ascending=False,
+    )
 
     #print(collected_table.to_csv())
     with open(f"books.csv", "w") as ff:
-        ff.write(collected_table.to_csv())
+        ff.write(collected_table.to_csv(index=False))
 
 
 if __name__ == "__main__":
