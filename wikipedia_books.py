@@ -2,9 +2,14 @@
 
 
 # TODO
-## combine like books
-### author vs author(s) correction
-### concating
+## fix NaN when combining significance etc
+## better/different solution for combining award/category/winner? (novella is coming, will there be overlap?)
+
+## guin, ursula k. le
+
+## move custom columns to the very end, after collation and such
+## col for ReadDate or ReadOn or When or something but they're all long and/or confusing
+
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
 ## add novellas lists
 ## add locus lists? others?
@@ -64,26 +69,19 @@ def resolve_duplicates(collected_table, table):
     # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
-    join_columns = ["Year", "Author", "Novel", "Rating", "Notes"]
+    join_columns = ["Year", "Author", "Novel", "Category", "Rating", "Notes"]
     new_table = pd.merge(
         collected_table,
         table,
         on=join_columns,
-        #left_on=join_columns,
-        #right_on=join_columns,
+        how="outer",
     )
+    for column in ("Significance", "Award", "Winner"):
+        new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
+        new_table = new_table.drop(f"{column}_x", axis=1)
+        new_table = new_table.drop(f"{column}_y", axis=1)
     import pdb; pdb.set_trace()
     return new_table
-
-###    for row in table.iterrows():
-###        if row[1]['Novel'] in collected_table['Novel'].values:
-###            # Make sure Author also lines up. Mostly this is for books with
-###            # multiple authors (which will live as separate entities for now at
-###            # least)
-###            collected_table.loc[row[0], 'Significance'] += row[1]['Significance']
-###        else:
-###            collected_table.loc[len(collected_table)] = row[1]
-###    return collected_table
 
 
 def main():
