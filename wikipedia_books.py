@@ -8,7 +8,7 @@
 ### will have consequences for the moon is a harsh mistress hugo double-dip (dune world/dune similar but name isn't the same so slightly different less impactful problem)
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
 
-## add novellas lists
+## add novellas lists -- meh, maybe separate file here
 ## add locus lists? others?
 
 
@@ -23,6 +23,7 @@ ARTICLES = [
         "award": "Hugo",
         "category": "Novel",
         "target_table_columns": ("Year", "Author(s)", "Novel"),
+        "title_column": "Novel",
         "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novel",
     },
     {
@@ -30,8 +31,25 @@ ARTICLES = [
         "award": "Nebula",
         "category": "Novel",
         "target_table_columns": ("Year", "Author", "Novel"),
+        "title_column": "Novel",
         "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
     },
+###    {
+###        "author_column": "Author(s)",
+###        "award": "Hugo",
+###        "category": "Novella",
+###        "target_table_columns": ("Year", "Author(s)", "Novella"),
+###        "title_column": "Novella",
+###        "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novella",
+###    },
+###    {
+###        "author_column": "Author",
+###        "award": "Nebula",
+###        "category": "Novella",
+###        "target_table_columns": ("Year", "Author", "Novella"),
+###        "title_column": "Novella",
+###        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novella",
+###    },
 ]
 
 
@@ -66,7 +84,7 @@ def resolve_duplicates(collected_table, table):
     # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
-    join_columns = ["Year", ARTICLES[0]["author_column"], "Novel", "Category"]
+    join_columns = ["Year", ARTICLES[0]["author_column"], ARTICLES[0]["title_column"], "Category"]
     new_table = pd.merge(
         collected_table,
         table,
@@ -145,8 +163,11 @@ def main():
         # Special case: Ursula K. Le Guin
         table = table.replace("Guin, Ursula K. Le", "Le Guin, Ursula K.")
 
-        print("Renaming author column")
-        table = table.rename(columns={article["author_column"]: ARTICLES[0]["author_column"]})
+        print("Normalizing author and title column names")
+        table = table.rename(columns={
+            article["author_column"]: ARTICLES[0]["author_column"],
+            article["title_column"]: ARTICLES[0]["title_column"],
+        })
 
         # Combine like entries
         #
