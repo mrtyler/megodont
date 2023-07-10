@@ -3,10 +3,12 @@
 
 # TODO
 ## better/different solution for combining award/category/winner? (novella is coming, will there be overlap?)
+### i think "Hugo Novel Winner, Nebula Novel Nominee, Locus Sci-Fi Novel Winner" all in one cell is fine? tempting to drop category but i think overlap is theoretically possible soooooo idk
 
 ## one off years (diamond age, paladin of souls)
 ### will have consequences for the moon is a harsh mistress hugo double-dip (dune world/dune similar but name isn't the same so slightly different less impactful problem)
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
+## filter "Not awarded"
 
 ## add novellas lists -- meh, maybe separate file here
 ## locus everything is a nominee -> everything is a winner
@@ -46,6 +48,26 @@ ARTICLES = [
         "target_table_columns": ("Year", "Author", "Nominated Work"),
         "title_column": "Nominated Work",
         "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Novel",
+        "winner_score": 4,
+    },
+    {
+        "author_column": "Author",
+        "award": "Locus Sci-Fi",
+        "category": "Novel",
+        "nominee_score": 2,
+        "target_table_columns": ("Year", "Author", "Nominated Work[1]"),
+        "title_column": "Nominated Work[1]",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Science_Fiction_Novel",
+        "winner_score": 4,
+    },
+    {
+        "author_column": "Author",
+        "award": "Locus Fantasy",
+        "category": "Novel",
+        "nominee_score": 2,
+        "target_table_columns": ("Year", "Author", "Novel"),
+        "title_column": "Novel",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Fantasy_Novel",
         "winner_score": 4,
     },
 ###    {
