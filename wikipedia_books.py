@@ -2,8 +2,6 @@
 
 
 # TODO
-## hugo first because hugo was first
-
 ## better/different solution for combining award/category/winner? (novella is coming, will there be overlap?)
 
 ## one off years (diamond age, paladin of souls)
@@ -21,18 +19,18 @@ import pandas as pd
 
 ARTICLES = [
     {
-        "author_column": "Author",
-        "award": "Nebula",
-        "category": "Novel",
-        "target_table_columns": ("Year", "Author", "Novel"),
-        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
-    },
-    {
         "author_column": "Author(s)",
         "award": "Hugo",
         "category": "Novel",
         "target_table_columns": ("Year", "Author(s)", "Novel"),
         "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novel",
+    },
+    {
+        "author_column": "Author",
+        "award": "Nebula",
+        "category": "Novel",
+        "target_table_columns": ("Year", "Author", "Novel"),
+        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
     },
 ]
 
@@ -68,7 +66,7 @@ def resolve_duplicates(collected_table, table):
     # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
-    join_columns = ["Year", "Author", "Novel", "Category"]
+    join_columns = ["Year", ARTICLES[0]["author_column"], "Novel", "Category"]
     new_table = pd.merge(
         collected_table,
         table,
@@ -170,20 +168,12 @@ def main():
     collected_table = collected_table.assign(Notes=empty_col)
 
     # Sort it out
-    #
-    # Handle year separately because we want oldest first (but other stuff is reverse sorted)
-    collected_table = collected_table.sort_values(
-        by=["Year"],
-    )
-    sort_cols = [
-        "Significance",
-        "Award",
-    ]
-    collected_table = collected_table.sort_values(
-        by=sort_cols,
-        ascending=False,
-    )
+    print("Sorting data")
+    collected_table = collected_table.sort_values(by=["Year"],)
+    collected_table = collected_table.sort_values(by=["Significance", "Award"], ascending=False)
 
+    # Write it down
+    print("Writing csv")
     #print(collected_table.to_csv())
     with open(f"books.csv", "w") as ff:
         ff.write(collected_table.to_csv(index=False))
