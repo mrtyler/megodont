@@ -9,9 +9,9 @@
 ### will have consequences for the moon is a harsh mistress hugo double-dip (dune world/dune similar but name isn't the same so slightly different less impactful problem)
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
 ## filter "Not awarded"
+## filter first moon is a harsh mistress is what i decided
 
 ## add novellas lists -- meh, maybe separate file here
-## locus everything is a nominee -> everything is a winner
 
 
 import re
@@ -44,31 +44,34 @@ ARTICLES = [
         "author_column": "Author",
         "award": "Locus",
         "category": "Novel",
-        "nominee_score": 2,
+        "nominee_score": 0,
         "target_table_columns": ("Year", "Author", "Nominated Work"),
         "title_column": "Nominated Work",
         "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Novel",
-        "winner_score": 4,
+        "winner_score": 1,
+        "winners_only": True,
     },
     {
         "author_column": "Author",
         "award": "Locus Sci-Fi",
         "category": "Novel",
-        "nominee_score": 2,
+        "nominee_score": 0,
         "target_table_columns": ("Year", "Author", "Nominated Work[1]"),
         "title_column": "Nominated Work[1]",
         "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Science_Fiction_Novel",
-        "winner_score": 4,
+        "winner_score": 1,
+        "winners_only": True,
     },
     {
         "author_column": "Author",
         "award": "Locus Fantasy",
         "category": "Novel",
-        "nominee_score": 2,
+        "nominee_score": 0,
         "target_table_columns": ("Year", "Author", "Novel"),
         "title_column": "Novel",
         "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Fantasy_Novel",
-        "winner_score": 4,
+        "winner_score": 1,
+        "winners_only": True,
     },
 ###    {
 ###        "author_column": "Author(s)",
@@ -177,10 +180,8 @@ def main():
         winner_col = []
         significance_col = []
         for row in table.iterrows():
-            if row[1][article["author_column"]].endswith("*"):
+            if row[1][article["author_column"]].endswith("*") or article.get("winners_only"):
                 winner_col.append("Winner")
-                # Also modify Author to remove marker
-                table.at[row[0], article["author_column"]] = table.at[row[0], article["author_column"]][:-1]
                 significance_col.append(article["winner_score"])
             else:
                 winner_col.append("Nominee")
@@ -190,10 +191,14 @@ def main():
 
         # first middle middle+ last -> last, first middle middle+
         #
-        # Do this after special \* processing for winner
-        #
         # Weird logic to treat ' (translator)' as part of the last name. Had to
         # add non-'(' to non-space to make it work.
+        print("Removing trailing * from author names")
+        table = table.replace(
+            to_replace={article["author_column"]: r'\*$'},
+            value={article["author_column"]: r''},
+            regex=True,
+        )
         print("Changing author names to last, first")
         table = table.replace(
             to_replace={article["author_column"]: r'(.*) ([^ (]+( \(translator\))?)'},
@@ -201,7 +206,10 @@ def main():
             regex=True,
         )
         # Special case: Ursula K. Le Guin
-        table = table.replace("Guin, Ursula K. Le", "Le Guin, Ursula K.")
+        table = table.replace(
+            to_replace={article["author_column"]: "Guin, Ursula K. Le",},
+            value={article["author_column"]: "Le Guin, Ursula K.",},
+        )
 
         print("Normalizing author and title column names")
         table = table.rename(columns={
