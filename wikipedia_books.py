@@ -2,16 +2,22 @@
 
 
 # TODO
-## better/different solution for combining award/category/winner? (novella is coming, will there be overlap?)
-### i think "Hugo Novel Winner, Nebula Novel Nominee, Locus Sci-Fi Novel Winner" all in one cell is fine? tempting to drop category but i think overlap is theoretically possible soooooo idk
-
 ## one off years (diamond age, paladin of souls)
 ### will have consequences for the moon is a harsh mistress hugo double-dip (dune world/dune similar but name isn't the same so slightly different less impactful problem)
+
+## script to glue ratings/notes back to title+author!
+
+## check for overlap between categories(?!)
+
+## add novellas lists -- separate file here. cli option? comment-it-out hack aka THE BRENDAN? [brendan is watching dot meme]
+
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
 ## filter "Not awarded"
 ## filter first moon is a harsh mistress is what i decided
+### maybe also filter dune world for same logic? less impactful but more pure
 
-## add novellas lists -- meh, maybe separate file here
+## column per award i guess. fillna to empty string
+## if not, maybe move category back out to its own column (or nowhere if separate sheets)
 
 
 import re
@@ -53,7 +59,7 @@ ARTICLES = [
     },
     {
         "author_column": "Author",
-        "award": "Locus Sci-Fi",
+        "award": "LocSf",
         "category": "Novel",
         "nominee_score": 0,
         "target_table_columns": ("Year", "Author", "Nominated Work[1]"),
@@ -64,7 +70,7 @@ ARTICLES = [
     },
     {
         "author_column": "Author",
-        "award": "Locus Fantasy",
+        "award": "LocF",
         "category": "Novel",
         "nominee_score": 0,
         "target_table_columns": ("Year", "Author", "Novel"),
@@ -76,22 +82,22 @@ ARTICLES = [
 ###    {
 ###        "author_column": "Author(s)",
 ###        "award": "Hugo",
-###        "category": "Novella",
-###        "nominee_score": 2,
+###        "category": "N'ella",
+###        "nominee_score": 4,
 ###        "target_table_columns": ("Year", "Author(s)", "Novella"),
 ###        "title_column": "Novella",
 ###        "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novella",
-###        "winner_score": 5,
+###        "winner_score": 10,
 ###    },
 ###    {
 ###        "author_column": "Author",
 ###        "award": "Nebula",
-###        "category": "Novella",
-###        "nominee_score": 2,
+###        "category": "N'ella",
+###        "nominee_score": 4,
 ###        "target_table_columns": ("Year", "Author", "Novella"),
 ###        "title_column": "Novella",
 ###        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novella",
-###        "winner_score": 5,
+###        "winner_score": 10,
 ###    },
 ]
 
@@ -127,7 +133,7 @@ def resolve_duplicates(collected_table, table):
     # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
-    join_columns = ["Year", ARTICLES[0]["author_column"], ARTICLES[0]["title_column"], "Category"]
+    join_columns = ["Year", ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
     new_table = pd.merge(
         collected_table,
         table,
@@ -139,14 +145,16 @@ def resolve_duplicates(collected_table, table):
     # in NaN everywhere)
     fill_values = {
         "Significance_x": 0,
-        "Award_x": "",
-        "Winner_x": "",
+        "Awards_x": "",
         "Significance_y": 0,
-        "Award_y": "",
-        "Winner_y": "",
+        "Awards_y": "",
     }
     new_table = new_table.fillna(value=fill_values)
-    for column in ("Significance", "Award", "Winner"):
+    for column in ("Significance",):
+        new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
+        new_table = new_table.drop(f"{column}_x", axis=1)
+        new_table = new_table.drop(f"{column}_y", axis=1)
+    for column in ("Awards",):
         new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
@@ -170,23 +178,24 @@ def main():
         # 2015[e] -> 2015
         table = table.replace(to_replace=r"\[[a-z]\]", value="", regex=True)
 
-        print("Populating new columns")
-        award_col = [article["award"] for _ in range(num_rows)]
-        table = table.assign(Award=award_col)
-        category_col = [article["category"] for _ in range(num_rows)]
-        table = table.assign(Category=category_col)
+        # TODO delete this and/or reformat category/awards (column per award, category maybe absent or some overlap thing)
+        #print("Populating new columns")
+        #award_col = [article["award"] for _ in range(num_rows)]
+        #table = table.assign(Award=award_col)
+        #category_col = [article["category"] for _ in range(num_rows)]
+        #table = table.assign(Category=category_col)
 
         print("Calculating Winner and Significance")
         winner_col = []
         significance_col = []
         for row in table.iterrows():
             if row[1][article["author_column"]].endswith("*") or article.get("winners_only"):
-                winner_col.append("Winner")
+                winner_col.append(f"{article['award']} {article['category']} Win ({article['winner_score']}), ")
                 significance_col.append(article["winner_score"])
             else:
-                winner_col.append("Nominee")
+                winner_col.append(f"{article['award']} {article['category']} Nom ({article['nominee_score']}), ")
                 significance_col.append(article["nominee_score"])
-        table = table.assign(Winner=winner_col)
+        table = table.assign(Awards=winner_col)
         table = table.assign(Significance=significance_col)
 
         # first middle middle+ last -> last, first middle middle+
@@ -227,6 +236,10 @@ def main():
             print("Folding table into collected_table")
             collected_table = resolve_duplicates(collected_table, table)
 
+    print("Final cleanup")
+    collected_table = collected_table.replace(to_replace={"Awards": r", $"}, value={"Awards": r""}, regex=True)
+    collected_table["Significance"] = collected_table["Significance"].astype(int)
+
     print("Populating final new columns")
     collected_num_rows = collected_table.shape[0]
     # String "0" because of resolve_duplicates() things
@@ -239,7 +252,7 @@ def main():
     # Sort it out
     print("Sorting data")
     collected_table = collected_table.sort_values(by=["Year"],)
-    collected_table = collected_table.sort_values(by=["Significance", "Award"], ascending=False)
+    collected_table = collected_table.sort_values(by=["Significance", "Awards"], ascending=False)
 
     # Write it down
     print("Writing csv")
