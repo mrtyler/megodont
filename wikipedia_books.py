@@ -2,13 +2,17 @@
 
 
 # TODO
-## script to glue ratings/notes back to title+author!
+## re-fill 0 rating (where is this going? maybe 0 counts as none and gets dropped? anyway)
+## don't lose row if i "accidentally" change a key column like author! maybe just how=outer? or will my dumb _x _y logic (that needs revisiting) mess that up?
+## revisit dumb _x _y logic in merge_human
+## also Year col is in the wrong place again smh
+## heh i think all of this should have been collected_table["Significance"] = human_table["Significance"] X 3 columns T.T smh. o wate maybe not because i need to merge to potentially re-sort and everything with new entries and suchhhhh
 
 ## check for overlap between categories(?!)
 
 ## add novellas lists -- separate file here. cli option? comment-it-out hack aka THE BRENDAN? [brendan is watching dot meme]
 
-## find and fix outliers (thomas m drisch, diff authors of same book, translator things, etc.)
+## find and fix outliers (thomas m drisch, diff authors of same book, translator things, (also known as) inconsistency [fix wikipedia :)] etc.)
 ## filter "Not awarded"
 ## filter first moon is a harsh mistress is what i decided
 ### maybe also filter dune world for same logic? less impactful but more pure
@@ -17,6 +21,7 @@
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
 
 
+import os
 import re
 
 import pandas as pd
@@ -97,7 +102,7 @@ ARTICLES = [
 ###        "winner_score": 10,
 ###    },
 ]
-
+HUMAN_GENERATED_CSV = "books - books.csv.csv"
 
 def fetch_url(url):
     print(f"Fetching {url}...")
@@ -161,6 +166,44 @@ def resolve_duplicates(collected_table, table):
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
     return new_table
+
+
+def merge_or_init_human_columns(collected_table):
+    def init_human_columns(collected_table):
+        collected_num_rows = collected_table.shape[0]
+        # String "0" because of resolve_duplicates() things
+        zero_col = ["0" for _ in range(collected_num_rows)]
+        collected_table = collected_table.assign(Rating=zero_col)
+        empty_col = ["" for _ in range(collected_num_rows)]
+        collected_table = collected_table.assign(WhenRead=empty_col)
+        collected_table = collected_table.assign(Notes=empty_col)
+        return collected_table
+
+    def merge_human_columns(collected_table):
+        human_table = pd.read_csv(HUMAN_GENERATED_CSV)
+        join_columns = [ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
+        merged_table = collected_table.merge(human_table, on=join_columns, how="left")
+
+        # Keep everything from left set, except human columns
+        for decorated_column in merged_table.columns:
+            column = re.sub(r"_[xy]$", "", decorated_column)
+            human_columns = ("Rating", "WhenRead", "Notes",)
+            if column in human_columns:
+                merged_table[column] = merged_table[f"{column}_y"]
+            elif column in join_columns:
+                # Nothing to do for undecorated columns i.e. the ones from the join
+                continue
+            else:
+                merged_table[column] = merged_table[f"{column}_x"]
+        for decorated_column in merged_table.columns:
+            if decorated_column.endswith("_x") or decorated_column.endswith("_y"):
+                merged_table = merged_table.drop(decorated_column, axis=1)
+        return merged_table
+
+    collected_table = init_human_columns(collected_table)
+    if os.path.exists(HUMAN_GENERATED_CSV):
+        collected_table = merge_human_columns(collected_table)
+    return collected_table
 
 
 def main():
@@ -242,14 +285,8 @@ def main():
     collected_table = collected_table.replace(to_replace={"Awards": r", $"}, value={"Awards": r""}, regex=True)
     collected_table["Significance"] = collected_table["Significance"].astype(int)
 
-    print("Populating final new columns")
-    collected_num_rows = collected_table.shape[0]
-    # String "0" because of resolve_duplicates() things
-    zero_col = ["0" for _ in range(collected_num_rows)]
-    collected_table = collected_table.assign(Rating=zero_col)
-    empty_col = ["" for _ in range(collected_num_rows)]
-    collected_table = collected_table.assign(WhenRead=empty_col)
-    collected_table = collected_table.assign(Notes=empty_col)
+    print("Populating human-filled columns")
+    collected_table = merge_or_init_human_columns(collected_table)
 
     # Sort it out
     print("Sorting data")
