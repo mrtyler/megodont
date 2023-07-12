@@ -2,9 +2,6 @@
 
 
 # TODO
-## one off years (diamond age, paladin of souls)
-### will have consequences for the moon is a harsh mistress hugo double-dip (dune world/dune similar but name isn't the same so slightly different less impactful problem)
-
 ## script to glue ratings/notes back to title+author!
 
 ## check for overlap between categories(?!)
@@ -133,7 +130,7 @@ def resolve_duplicates(collected_table, table):
     # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
-    join_columns = ["Year", ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
+    join_columns = [ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
     new_table = pd.merge(
         collected_table,
         table,
@@ -144,17 +141,22 @@ def resolve_duplicates(collected_table, table):
     # sensible defaults so later concatenation makes sense (and doesn't result
     # in NaN everywhere)
     fill_values = {
+        "Year_x": 99999,  # Must be > all real years so we can drop it with min() later
         "Significance_x": 0,
         "Awards_x": "",
+        "Year_y": 99999,  # Must be > all real years so we can drop it with min() later
         "Significance_y": 0,
         "Awards_y": "",
     }
     new_table = new_table.fillna(value=fill_values)
-    for column in ("Significance",):
-        new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
+    # Hugo and Nebula in particular disagree on dates for many books (e.g.
+    # Paladin of Souls)
+    for column in ("Year",):
+        # Use insert() to keep Year as the first column
+        new_table.insert(0, column, new_table[f"{column}_x"].astype(int).combine(new_table[f"{column}_y"].astype(int), min))
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
-    for column in ("Awards",):
+    for column in ("Significance", "Awards",):
         new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
@@ -190,10 +192,10 @@ def main():
         significance_col = []
         for row in table.iterrows():
             if row[1][article["author_column"]].endswith("*") or article.get("winners_only"):
-                winner_col.append(f"{article['award']} {article['category']} Win ({article['winner_score']}), ")
+                winner_col.append(f"{article['award']} Win({article['winner_score']}), ")
                 significance_col.append(article["winner_score"])
             else:
-                winner_col.append(f"{article['award']} {article['category']} Nom ({article['nominee_score']}), ")
+                winner_col.append(f"{article['award']} Nom({article['nominee_score']}), ")
                 significance_col.append(article["nominee_score"])
         table = table.assign(Awards=winner_col)
         table = table.assign(Significance=significance_col)
