@@ -170,8 +170,9 @@ def resolve_duplicates(collected_table, table):
     }
     new_table = new_table.fillna(value=fill_values)
 
-    # Hugo and Nebula in particular disagree on dates for many books (e.g.
-    # Paladin of Souls)
+    # Hugo and Nebula in particular have different rules for award dates for
+    # many books (e.g. Paladin of Souls). We'll keep the earliest date that we
+    # see.
     for column in ("Year",):
         # Use insert() to keep Year as the first column
         new_table.insert(0, column, new_table[f"{column}_x"].astype(int).combine(new_table[f"{column}_y"].astype(int), min))
@@ -265,6 +266,8 @@ def main():
         table = table.replace(to_replace=r" \(French\)", value="", regex=True)
         # 2015[e] -> 2015
         table = table.replace(to_replace=r"\[[a-z]\]", value="", regex=True)
+        # Drop "Not awarded"
+        table = table[table[article["author_column"]] != "Not awarded"]
 
         print("Calculating Winner and Significance")
         winner_col = []
