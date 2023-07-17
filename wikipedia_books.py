@@ -15,6 +15,8 @@
 
 ## rename Novel etc. columns at the end to Title
 
+## strip "" from Novella (etc.) titles?
+
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
 ## thinking of more complicated thing to make spreadsheeting easier: column per award, value is number of points. so uh i guess Hugo (4/10): 4, Nebula (4/10): 10, LocSF (0/1): 1. i think csv will still do calculation and fill in real Significance, but this opens door for spreadsheet-level customization where Signif col can be =sum(a7:a9) instead
@@ -277,8 +279,9 @@ def main():
         table = table.replace(to_replace=r" \(French\)", value="", regex=True)
 
         print("Dropping some rows")
-        # Drop "Not awarded"
+        # Drop "Not awarded" and variants
         table = table[table[article["author_column"]] != "Not awarded"]
+        table = table[table[article["author_column"]] != "(no award)+"]
 
         # The wikipedia article says, "_The Moon Is a Harsh Mistress_ was
         # serialized in 1965–66, and was allowed to be nominated for both
