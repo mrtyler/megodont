@@ -10,7 +10,6 @@
 
 ## add novellas lists -- separate file here. cli option? comment-it-out hack aka THE BRENDAN? [brendan is watching dot meme]
 
-## data problem: [The]. also years are wildly different? ,"MacLean, Katherine",The Missing Man,,,0.0,,
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, (also known as) inconsistency [fix wikipedia :)] etc.)
 
 ## rename Novel etc. columns at the end to Title
@@ -294,6 +293,7 @@ def main():
             table[(table[article["title_column"]] == "The Moon Is a Harsh Mistress") & (table["Year"] == "1966")]
             .index
         )
+
         # Similar to the TMiaHM situation, wikipedia says, "_Dune World_ was
         # the title of the 1964 serialized novel; when "Dune World" and its
         # sequel, "The Prophet of Dune", were incorporated into the 1966
@@ -304,6 +304,18 @@ def main():
         # Hugo Novel Nomination for Dune World and let the spice^W awards flow
         # to the 1966 Hugo/Nebula Novel Wins.
         table = table[table[article["title_column"]] != "Dune World"]
+
+        # There appears to be a similar situation with Katherine MacLean's 1972
+        # Nebula Novella Win for "The Missing Man" and her 1976 Nebula Novel
+        # Nomination for _Missing Man_. But
+        # https://en.wikipedia.org/wiki/Katherine_MacLean says, "[_Missing
+        # Man_] is a fix-up of MacLean's three Rescue Squad stories, including
+        # the 1971 Nebula Award-winning novella of the same name."
+        #
+        # The use/non-use of "The" in the title is consistent on wikipedia and
+        # goodreads so I'm going to let these go as separate entities with
+        # separate stats.
+        pass
 
         print("Calculating Winner and Significance")
         winner_col = []
