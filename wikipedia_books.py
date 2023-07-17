@@ -10,17 +10,26 @@
 
 ## add novellas lists -- separate file here. cli option? comment-it-out hack aka THE BRENDAN? [brendan is watching dot meme]
 
-## filter "Not awarded"
-## filter first moon is a harsh mistress is what i decided
-### maybe also filter dune world for same logic? less impactful but more pure
 ## data problem: [The]. also years are wildly different? ,"MacLean, Katherine",The Missing Man,,,0.0,,
 ## find and fix outliers (thomas m drisch, diff authors of same book, translator things, (also known as) inconsistency [fix wikipedia :)] etc.)
+
+## rename Novel etc. columns at the end to Title
 
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
 ## thinking of more complicated thing to make spreadsheeting easier: column per award, value is number of points. so uh i guess Hugo (4/10): 4, Nebula (4/10): 10, LocSF (0/1): 1. i think csv will still do calculation and fill in real Significance, but this opens door for spreadsheet-level customization where Signif col can be =sum(a7:a9) instead
 
+## threads for wikipedia fetches
+### retries for wikipedia fetches?
+## caches for wikipedia fetches (invalidation seems hard so maybe a --clean option?)
+
 ## generate .xlsx? sheet per category. do the formula lookup for Signif myself (maybe on a dedicated sheet because denormalized data lol)
+
+## add retro-hugos?
+## add other awards??
+
+## break main into functions, sergeants/privates
+## write some tests for key functionality EL OH EL
 
 
 import os
@@ -260,14 +269,38 @@ def main():
         table = drop_unwanted_columns(table, article)
 
         print("Cleaning up text")
+        # Remove footnote links like 2015[e] -> 2015
+        table = table.replace(to_replace=r"\[[a-z]\]", value="", regex=True)
         # Cixin Liu (Chinese) [lol]
         table = table.replace(to_replace=r" \(Chinese\)", value="", regex=True)
         # Jean Bruller (French) [lol]
         table = table.replace(to_replace=r" \(French\)", value="", regex=True)
-        # 2015[e] -> 2015
-        table = table.replace(to_replace=r"\[[a-z]\]", value="", regex=True)
+
+        print("Dropping some rows")
         # Drop "Not awarded"
         table = table[table[article["author_column"]] != "Not awarded"]
+
+        # The wikipedia article says, "_The Moon Is a Harsh Mistress_ was
+        # serialized in 1965–66, and was allowed to be nominated for both
+        # years."
+        #
+        # That's not helpful for our purposes, so we'll drop the 1966 Hugo
+        # Novel Nomination and go with the 1967 Hugo Novel Win (which will
+        # later merge with the 1967 Nebula Novel Nomination).
+        table = table.drop(
+            table[(table[article["title_column"]] == "The Moon Is a Harsh Mistress") & (table["Year"] == "1966")]
+            .index
+        )
+        # Similar to the TMiaHM situation, wikipedia says, "_Dune World_ was
+        # the title of the 1964 serialized novel; when "Dune World" and its
+        # sequel, "The Prophet of Dune", were incorporated into the 1966
+        # edition of _Dune_, the book edition was allowed to be nominated in
+        # 1966." dune world
+        #
+        # This is similarly unhelpful for our purposes, so we'll drop the 1964
+        # Hugo Novel Nomination for Dune World and let the spice^W awards flow
+        # to the 1966 Hugo/Nebula Novel Wins.
+        table = table[table[article["title_column"]] != "Dune World"]
 
         print("Calculating Winner and Significance")
         winner_col = []
@@ -323,6 +356,10 @@ def main():
     print("Final cleanup")
     collected_table = collected_table.replace(to_replace={"Awards": r", $"}, value={"Awards": r""}, regex=True)
     collected_table["Significance"] = collected_table["Significance"].astype(int)
+    # TODO Only bother with this if it fixes titles like "2312" getting parsed
+    # as numbers and right-justified. Otherwise, make a note for .xlsx time to
+    # force left-justify on this column!
+    collected_table[ARTICLES[0]["title_column"]] = collected_table[ARTICLES[0]["title_column"]].astype(str)
 
     print("Populating human-filled columns")
     collected_table = merge_or_init_human_columns(collected_table)
