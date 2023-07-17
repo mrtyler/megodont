@@ -2,12 +2,6 @@
 
 
 # TODO
-## re-fill 0 rating (where is this going? maybe 0 counts as none and gets dropped? anyway)
-## don't lose row if i "accidentally" change a key column like author! maybe just how=outer? or will my dumb _x _y logic (that needs revisiting) mess that up?
-## revisit dumb _x _y logic in merge_human
-## also Year col is in the wrong place again smh
-## heh i think all of this should have been collected_table["Significance"] = human_table["Significance"] X 3 columns T.T smh. o wate maybe not because i need to merge to potentially re-sort and everything with new entries and suchhhhh
-
 ## check for overlap between categories(?!)
 
 ## add novellas lists -- separate file here. cli option? comment-it-out hack aka THE BRENDAN? [brendan is watching dot meme]
@@ -19,6 +13,7 @@
 
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
+## thinking of more complicated thing to make spreadsheeting easier: column per award, value is number of points. so uh i guess Hugo (4/10): 4, Nebula (4/10): 10, LocSF (0/1): 1. i think csv will still do calculation and fill in real Significance, but this opens door for spreadsheet-level customization where Signif col can be =sum(a7:a9) instead
 
 
 import os
@@ -135,6 +130,7 @@ def resolve_duplicates(collected_table, table):
     # https://stackoverflow.com/questions/64385747/valueerror-you-are-trying-to-merge-on-object-and-int64-columns-when-use-pandas
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
+
     join_columns = [ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
     new_table = pd.merge(
         collected_table,
@@ -142,6 +138,7 @@ def resolve_duplicates(collected_table, table):
         on=join_columns,
         how="outer",
     )
+
     # merge() leaves NaN for items that don't appear in both lists. Fill with
     # sensible defaults so later concatenation makes sense (and doesn't result
     # in NaN everywhere)
@@ -154,6 +151,7 @@ def resolve_duplicates(collected_table, table):
         "Awards_y": "",
     }
     new_table = new_table.fillna(value=fill_values)
+
     # Hugo and Nebula in particular disagree on dates for many books (e.g.
     # Paladin of Souls)
     for column in ("Year",):
@@ -165,6 +163,7 @@ def resolve_duplicates(collected_table, table):
         new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
+
     return new_table
 
 
@@ -182,24 +181,50 @@ def merge_or_init_human_columns(collected_table):
     def merge_human_columns(collected_table):
         human_table = pd.read_csv(HUMAN_GENERATED_CSV)
         join_columns = [ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
-        merged_table = collected_table.merge(human_table, on=join_columns, how="left")
+        collected_table = collected_table.merge(human_table, on=join_columns, how="outer")
 
-        # Keep everything from left set, except human columns
-        for decorated_column in merged_table.columns:
-            column = re.sub(r"_[xy]$", "", decorated_column)
-            human_columns = ("Rating", "WhenRead", "Notes",)
-            if column in human_columns:
-                merged_table[column] = merged_table[f"{column}_y"]
-            elif column in join_columns:
-                # Nothing to do for undecorated columns i.e. the ones from the join
-                continue
+        if any([f"{col}_x" in collected_table.columns or f"{col}_y" in collected_table.columns for col in join_columns]):
+            raise ValueError("Eyyyyyyy column mismatch??")
+
+        # Resolve "conflicts" by taking the right (human-generated csv) side
+        # for the human-managed columns...
+        human_columns = ("Rating", "WhenRead", "Notes",)
+        for column in human_columns:
+            collected_table[column] = collected_table[f"{column}_y"]
+            collected_table = collected_table.drop(f"{column}_x", axis=1)
+            collected_table = collected_table.drop(f"{column}_y", axis=1)
+
+        # ...and the left (computer-generated) side for everything else
+        for column in collected_table.columns:
+            if column.endswith("_x"):
+                column_root = re.sub(r"_x$", "", column)
+                # Keep "Year" as the first column
+                if column_root == "Year":
+                    collected_table.insert(0, column_root, collected_table[column])
+                # Everything else to the right, but left of human-managed columns
+                else:
+                    left_of_human_columns_pos = len(collected_table.columns) - len(human_columns)
+                    collected_table.insert(left_of_human_columns_pos, column_root, collected_table[column])
+                collected_table = collected_table.drop(column, axis=1)
+            elif column.endswith("_y"):
+                collected_table = collected_table.drop(column, axis=1)
             else:
-                merged_table[column] = merged_table[f"{column}_x"]
-        for decorated_column in merged_table.columns:
-            if decorated_column.endswith("_x") or decorated_column.endswith("_y"):
-                merged_table = merged_table.drop(decorated_column, axis=1)
-        return merged_table
+                # Ignore already-processed column
+                pass
 
+        # Re-fill human-managed columns that have non-empty defaults. This is
+        # needed for when new rows are added to the computer-generated side (or
+        # e.g. if the human-generated csv contains only the few rows with
+        # human-generated ratings and not the whole collected corpus).
+        fill_values = {
+            "Rating": 0,
+        }
+        collected_table = collected_table.fillna(value=fill_values)
+
+        # Ship it!
+        return collected_table
+
+    # Main logic
     collected_table = init_human_columns(collected_table)
     if os.path.exists(HUMAN_GENERATED_CSV):
         collected_table = merge_human_columns(collected_table)
