@@ -2,18 +2,25 @@
 
 
 # TODO
-## check for overlap between categories(?!)
+
+## NOTE! As of 2023-07-17 no overlap between Hugo/Nebula Novel/Novellas and Locus Novels
+## But there IS overlap between Nebula Novel and Locus Novella >:O
+## 1997.0,"Willis, Connie",Bellwether,5.0,"Nebula Novel Nom(4), Locus N'ella Win(1)",0.0,,
+## 1996.0,"Willis, Connie",Remake,5.0,"Hugo Novel Nom(4), Locus N'ella Win(1)",0.0,,
 
 ## add novellas lists -- separate file here. cli option? comment-it-out hack aka THE BRENDAN? [brendan is watching dot meme]
 
-## find and fix outliers (thomas m drisch, diff authors of same book, translator things, (also known as) inconsistency [fix wikipedia :)] etc.)
 ## filter "Not awarded"
 ## filter first moon is a harsh mistress is what i decided
 ### maybe also filter dune world for same logic? less impactful but more pure
+## data problem: [The]. also years are wildly different? ,"MacLean, Katherine",The Missing Man,,,0.0,,
+## find and fix outliers (thomas m drisch, diff authors of same book, translator things, (also known as) inconsistency [fix wikipedia :)] etc.)
 
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
 ## thinking of more complicated thing to make spreadsheeting easier: column per award, value is number of points. so uh i guess Hugo (4/10): 4, Nebula (4/10): 10, LocSF (0/1): 1. i think csv will still do calculation and fill in real Significance, but this opens door for spreadsheet-level customization where Signif col can be =sum(a7:a9) instead
+
+## generate .xlsx? sheet per category. do the formula lookup for Signif myself (maybe on a dedicated sheet because denormalized data lol)
 
 
 import os
@@ -76,26 +83,37 @@ ARTICLES = [
         "winner_score": 1,
         "winners_only": True,
     },
-###    {
-###        "author_column": "Author(s)",
-###        "award": "Hugo",
-###        "category": "N'ella",
-###        "nominee_score": 4,
-###        "target_table_columns": ("Year", "Author(s)", "Novella"),
-###        "title_column": "Novella",
-###        "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novella",
-###        "winner_score": 10,
-###    },
-###    {
-###        "author_column": "Author",
-###        "award": "Nebula",
-###        "category": "N'ella",
-###        "nominee_score": 4,
-###        "target_table_columns": ("Year", "Author", "Novella"),
-###        "title_column": "Novella",
-###        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novella",
-###        "winner_score": 10,
-###    },
+    {
+        "author_column": "Author(s)",
+        "award": "Hugo",
+        "category": "N'ella",
+        "nominee_score": 4,
+        "target_table_columns": ("Year", "Author(s)", "Novella"),
+        "title_column": "Novella",
+        "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novella",
+        "winner_score": 10,
+    },
+    {
+        "author_column": "Author",
+        "award": "Nebula",
+        "category": "N'ella",
+        "nominee_score": 4,
+        "target_table_columns": ("Year", "Author", "Novella"),
+        "title_column": "Novella",
+        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novella",
+        "winner_score": 10,
+    },
+    {
+        "author_column": "Author",
+        "award": "Locus",
+        "category": "N'ella",
+        "nominee_score": 0,
+        "target_table_columns": ("Year", "Author", "Novella"),
+        "title_column": "Novella",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Novella",
+        "winner_score": 1,
+        "winners_only": True,
+    },
 ]
 HUMAN_GENERATED_CSV = "books - books.csv.csv"
 
@@ -248,22 +266,15 @@ def main():
         # 2015[e] -> 2015
         table = table.replace(to_replace=r"\[[a-z]\]", value="", regex=True)
 
-        # TODO delete this and/or reformat category/awards (column per award, category maybe absent or some overlap thing)
-        #print("Populating new columns")
-        #award_col = [article["award"] for _ in range(num_rows)]
-        #table = table.assign(Award=award_col)
-        #category_col = [article["category"] for _ in range(num_rows)]
-        #table = table.assign(Category=category_col)
-
         print("Calculating Winner and Significance")
         winner_col = []
         significance_col = []
         for row in table.iterrows():
             if row[1][article["author_column"]].endswith("*") or article.get("winners_only"):
-                winner_col.append(f"{article['award']} Win({article['winner_score']}), ")
+                winner_col.append(f"{article['award']} {article['category']} Win({article['winner_score']}), ")
                 significance_col.append(article["winner_score"])
             else:
-                winner_col.append(f"{article['award']} Nom({article['nominee_score']}), ")
+                winner_col.append(f"{article['award']} {article['category']} Nom({article['nominee_score']}), ")
                 significance_col.append(article["nominee_score"])
         table = table.assign(Awards=winner_col)
         table = table.assign(Significance=significance_col)
