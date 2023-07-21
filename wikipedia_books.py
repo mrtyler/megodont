@@ -3,22 +3,27 @@
 
 # TODO
 
-## NOTE! As of 2023-07-17 no overlap between Hugo/Nebula Novel/Novellas and Locus Novels
-## But there IS overlap between Nebula Novel and Locus Novella >:O
+## NOTE! As of 2023-07-17, there is no overlap between Hugo/Nebula Novel/Novellas and Locus Novels.
+## But there IS overlap between Nebula Novel and Locus Novella -- not sure how I'm going to handle this :O :
 ## 1997.0,"Willis, Connie",Bellwether,5.0,"Nebula Novel Nom(4), Locus N'ella Win(1)",0.0,,
 ## 1996.0,"Willis, Connie",Remake,5.0,"Hugo Novel Nom(4), Locus N'ella Win(1)",0.0,,
+##
+## Relatedly, not sure what to do about Category given this overlap.
+### Separate .csv file? Separate .xlsx worksheet (eventually)? CLI option to specify behavior? Comment-it-out hack aka THE BRENDAN?
 
-## add novellas lists -- separate file here. cli option? comment-it-out hack aka THE BRENDAN? [brendan is watching dot meme]
-
-## find and fix outliers (thomas m drisch, diff authors of same book, translator things, (also known as) inconsistency [fix wikipedia :)] etc.)
+## NOTE! As of 2023-07-17, I fixed inconsistencies in the wikipedia Hugo and Nebula lists for the same title:
+## XXX not yet 1. Thomas Disch should be Thomas M. Disch, as he is listed elsewhere on wikipedia and at e.g. https://www.thehugoawards.org/hugo-history/1981-hugo-awards/
+## XXX not yet 2. Change Nebula listing "Ursula Vernon (as T. Kingfisher)" to match Hugo which has "T. Kingfisher" that links to https://en.wikipedia.org/wiki/Ursula_Vernon. This is consistent with how she is credited at https://nebulas.sfwa.org/award-year/2022/
 
 ## rename Novel etc. columns at the end to Title
-
-## strip "" from Novella (etc.) titles?
+### ...by extracting fINAL_AUTHOR_COLUMN_NAME / TITLE and replacing all the goofy hardcoded ARTICLES[0]
 
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
 ## thinking of more complicated thing to make spreadsheeting easier: column per award, value is number of points. so uh i guess Hugo (4/10): 4, Nebula (4/10): 10, LocSF (0/1): 1. i think csv will still do calculation and fill in real Significance, but this opens door for spreadsheet-level customization where Signif col can be =sum(a7:a9) instead
+
+## add retro-hugos?
+## add other awards??
 
 ## threads for wikipedia fetches
 ### retries for wikipedia fetches?
@@ -26,11 +31,10 @@
 
 ## generate .xlsx? sheet per category. do the formula lookup for Signif myself (maybe on a dedicated sheet because denormalized data lol)
 
-## add retro-hugos?
-## add other awards??
-
 ## break main into functions, sergeants/privates
 ## write some tests for key functionality EL OH EL
+
+## do something different with multiple authors, translators, etc.?
 
 
 import os
@@ -276,8 +280,41 @@ def main():
         table = table.replace(to_replace=r" \(Chinese\)", value="", regex=True)
         # Jean Bruller (French) [lol]
         table = table.replace(to_replace=r" \(French\)", value="", regex=True)
+        # Remove leading/ending quotes, as in Novella titles ("Stardance")
+        ### hmmmmmm! This had some...unexpected results as the practice of turning a Novella into a Novel of the same name is not uncommon, apparently!
+        ### Perhaps I should not worry about the actually fewer cases where the same-titled things are not the same! Separate but equal categories!
+        ### This merge did surface some interesting works that would otherwise be buried!
+        ### 1992.0,"Kress, Nancy",Beggars in Spain,28.0,"Hugo Novel Nom(4), Nebula Novel Nom(4), Hugo N'ella Win(10), Nebula N'ella Win(10)",0.0,,
+        ### 1986.0,"Robinson, Kim Stanley",Green Mars,23.0,"Hugo Novel Win(10), Nebula Novel Nom(4), LocSf Novel Win(1), Hugo N'ella Nom(4), Nebula N'ella Nom(4)",0.0,,
+        ### 1983.0,"Brin, David",The Postman,13.0,"Hugo Novel Nom(4), Nebula Novel Nom(4), LocSf Novel Win(1), Hugo N'ella Nom(4)",0.0,,
+        ### 1966.0,"Davidson, Avram",Rogue Dragon,8.0,"Nebula Novel Nom(4), Nebula N'ella Nom(4)",0.0,,
+        ### 1975.0,"Dozois, Gardner",Strangers,8.0,"Nebula Novel Nom(4), Hugo N'ella Nom(4)",0.0,,
+        ### 1982.0,"Palmer, David R.",Emergence,8.0,"Hugo Novel Nom(4), Hugo N'ella Nom(4)",0.0,,
+        ### 1987.0,"Flynn, Michael F.",Eifelheim,8.0,"Hugo Novel Nom(4), Hugo N'ella Nom(4)",0.0,,
+        ### 1997.0,"Willis, Connie",Bellwether,5.0,"Nebula Novel Nom(4), Locus N'ella Win(1)",0.0,,
+        ### 1996.0,"Willis, Connie",Remake,5.0,"Hugo Novel Nom(4), Locus N'ella Win(1)",0.0,,
+        table = table.replace(to_replace=r'^"(.*)"$', value=r"\1", regex=True)
+        # Drop "(also known as ...)"
+        #
+        # Consider "Alfred Bester - The Computer Connection (also known as The
+        # Indian Giver)". The Hugos
+        # (https://www.thehugoawards.org/hugo-history/1976-hugo-awards/) list
+        # the alternate title while the Nebulas do not
+        # (https://nebulas.sfwa.org/award-year/1975/).
+        #
+        # The same is true for "Sawyer, Robert J. - The Terminal Experiment
+        # (also known as Hobson's Choice)"
+        #
+        # So the wikipedia articles faithfully represent the underlying awards
+        # and are not in need of normalization.
+        #
+        # I don't love dropping data but it's not sustainable to handle each
+        # exception by hand. A TODO-able alternative is to do another merge
+        # pass with logic that understands "Foo" and "Foo (also known as Bar)"
+        # are the same and we should keep the longer form.
+        table = table.replace(to_replace=r' \(also known as .*\)$', value=r"", regex=True)
 
-        print("Dropping some rows")
+        print("Dropping rows when no award given")
         # Drop "Not awarded" and variants
         table = table[table[article["author_column"]] != "Not awarded"]
         table = table[table[article["author_column"]] != "(no award)+"]
