@@ -15,9 +15,6 @@
 ## XXX not yet 1. Thomas Disch should be Thomas M. Disch, as he is listed elsewhere on wikipedia and at e.g. https://www.thehugoawards.org/hugo-history/1981-hugo-awards/
 ## XXX not yet 2. Change Nebula listing "Ursula Vernon (as T. Kingfisher)" to match Hugo which has "T. Kingfisher" that links to https://en.wikipedia.org/wiki/Ursula_Vernon. This is consistent with how she is credited at https://nebulas.sfwa.org/award-year/2022/
 
-## rename Novel etc. columns at the end to Title
-### ...by extracting fINAL_AUTHOR_COLUMN_NAME / TITLE and replacing all the goofy hardcoded ARTICLES[0]
-
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
 ## thinking of more complicated thing to make spreadsheeting easier: column per award, value is number of points. so uh i guess Hugo (4/10): 4, Nebula (4/10): 10, LocSF (0/1): 1. i think csv will still do calculation and fill in real Significance, but this opens door for spreadsheet-level customization where Signif col can be =sum(a7:a9) instead
@@ -129,6 +126,8 @@ ARTICLES = [
         "winners_only": True,
     },
 ]
+FINAL_AUTHOR_COLUMN_NAME = "Author"
+FINAL_TITLE_COLUMN_NAME = "Title"
 HUMAN_GENERATED_CSV = "books - books.csv.csv"
 
 def fetch_url(url):
@@ -163,7 +162,7 @@ def resolve_duplicates(collected_table, table):
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
 
-    join_columns = [ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
+    join_columns = [FINAL_AUTHOR_COLUMN_NAME, FINAL_TITLE_COLUMN_NAME]
     new_table = pd.merge(
         collected_table,
         table,
@@ -213,7 +212,7 @@ def merge_or_init_human_columns(collected_table):
 
     def merge_human_columns(collected_table):
         human_table = pd.read_csv(HUMAN_GENERATED_CSV)
-        join_columns = [ARTICLES[0]["author_column"], ARTICLES[0]["title_column"]]
+        join_columns = [FINAL_AUTHOR_COLUMN_NAME, FINAL_TITLE_COLUMN_NAME]
         collected_table = collected_table.merge(human_table, on=join_columns, how="outer")
 
         if any([f"{col}_x" in collected_table.columns or f"{col}_y" in collected_table.columns for col in join_columns]):
@@ -273,6 +272,12 @@ def main():
 
         table = drop_unwanted_columns(table, article)
 
+        print("Normalizing author and title column names")
+        table = table.rename(columns={
+            article["author_column"]: FINAL_AUTHOR_COLUMN_NAME,
+            article["title_column"]: FINAL_TITLE_COLUMN_NAME,
+        })
+
         print("Cleaning up text")
         # Remove footnote links like 2015[e] -> 2015
         table = table.replace(to_replace=r"\[[a-z]\]", value="", regex=True)
@@ -316,8 +321,8 @@ def main():
 
         print("Dropping rows when no award given")
         # Drop "Not awarded" and variants
-        table = table[table[article["author_column"]] != "Not awarded"]
-        table = table[table[article["author_column"]] != "(no award)+"]
+        table = table[table[FINAL_AUTHOR_COLUMN_NAME] != "Not awarded"]
+        table = table[table[FINAL_AUTHOR_COLUMN_NAME] != "(no award)+"]
 
         # The wikipedia article says, "_The Moon Is a Harsh Mistress_ was
         # serialized in 1965–66, and was allowed to be nominated for both
@@ -327,7 +332,7 @@ def main():
         # Novel Nomination and go with the 1967 Hugo Novel Win (which will
         # later merge with the 1967 Nebula Novel Nomination).
         table = table.drop(
-            table[(table[article["title_column"]] == "The Moon Is a Harsh Mistress") & (table["Year"] == "1966")]
+            table[(table[FINAL_TITLE_COLUMN_NAME] == "The Moon Is a Harsh Mistress") & (table["Year"] == "1966")]
             .index
         )
 
@@ -340,7 +345,7 @@ def main():
         # This is similarly unhelpful for our purposes, so we'll drop the 1964
         # Hugo Novel Nomination for Dune World and let the spice^W awards flow
         # to the 1966 Hugo/Nebula Novel Wins.
-        table = table[table[article["title_column"]] != "Dune World"]
+        table = table[table[FINAL_TITLE_COLUMN_NAME] != "Dune World"]
 
         # There appears to be a similar situation with Katherine MacLean's 1972
         # Nebula Novella Win for "The Missing Man" and her 1976 Nebula Novel
@@ -358,7 +363,7 @@ def main():
         winner_col = []
         significance_col = []
         for row in table.iterrows():
-            if row[1][article["author_column"]].endswith("*") or article.get("winners_only"):
+            if row[1][FINAL_AUTHOR_COLUMN_NAME].endswith("*") or article.get("winners_only"):
                 winner_col.append(f"{article['award']} {article['category']} Win({article['winner_score']}), ")
                 significance_col.append(article["winner_score"])
             else:
@@ -373,27 +378,21 @@ def main():
         # add non-'(' to non-space to make it work.
         print("Removing trailing * from author names")
         table = table.replace(
-            to_replace={article["author_column"]: r'\*$'},
-            value={article["author_column"]: r''},
+            to_replace={FINAL_AUTHOR_COLUMN_NAME: r'\*$'},
+            value={FINAL_AUTHOR_COLUMN_NAME: r''},
             regex=True,
         )
         print("Changing author names to last, first")
         table = table.replace(
-            to_replace={article["author_column"]: r'(.*) ([^ (]+( \(translator\))?)'},
-            value={article["author_column"]: r'\2, \1'},
+            to_replace={FINAL_AUTHOR_COLUMN_NAME: r'(.*) ([^ (]+( \(translator\))?)'},
+            value={FINAL_AUTHOR_COLUMN_NAME: r'\2, \1'},
             regex=True,
         )
         # Special case: Ursula K. Le Guin
         table = table.replace(
-            to_replace={article["author_column"]: "Guin, Ursula K. Le",},
-            value={article["author_column"]: "Le Guin, Ursula K.",},
+            to_replace={FINAL_AUTHOR_COLUMN_NAME: "Guin, Ursula K. Le",},
+            value={FINAL_AUTHOR_COLUMN_NAME: "Le Guin, Ursula K.",},
         )
-
-        print("Normalizing author and title column names")
-        table = table.rename(columns={
-            article["author_column"]: ARTICLES[0]["author_column"],
-            article["title_column"]: ARTICLES[0]["title_column"],
-        })
 
         # Combine like entries
         #
@@ -411,7 +410,7 @@ def main():
     # TODO Only bother with this if it fixes titles like "2312" getting parsed
     # as numbers and right-justified. Otherwise, make a note for .xlsx time to
     # force left-justify on this column!
-    collected_table[ARTICLES[0]["title_column"]] = collected_table[ARTICLES[0]["title_column"]].astype(str)
+    collected_table[FINAL_TITLE_COLUMN_NAME] = collected_table[FINAL_TITLE_COLUMN_NAME].astype(str)
 
     print("Populating human-filled columns")
     collected_table = merge_or_init_human_columns(collected_table)
