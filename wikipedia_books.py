@@ -20,7 +20,7 @@
 
 ## more data cleanup
 ### press enter [] vs emoji ugh locus award page at http://www.sfadb.com/Locus_Awards_Winners_By_Category#nva uses the dumb brackets. maybe another thing to do for my convenience anyway
-### https://www.chicagomanualofstyle.org/qanda/data/faq/topics/Jr.Sr.III/faq0002.html says Miller, Walter M., Jr.
+### https://www.chicagomanualofstyle.org/qanda/data/faq/topics/Jr.Sr.III/faq0002.html says Miller, Walter M., Jr. there are a few jr./sr. no iii or anything i can find aorn
 
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
@@ -368,17 +368,27 @@ def main():
         pass
 
         print("Calculating Winner and Significance")
-        winner_col = []
+        # This is the old strategy where all Awards are piled together as text
+        awards_col = []
+        # This is the new strategy where each Award gets its own column (and these columsn are glued together later)
+        award_col = []
         significance_col = []
         for row in table.iterrows():
             if row[1][FINAL_AUTHOR_COLUMN_NAME].endswith("*") or article.get("winners_only"):
-                winner_col.append(f"{article['award']} {article['category']} Win({article['winner_score']}), ")
+                awards_col.append(f"{article['award']} {article['category']} Win({article['winner_score']}), ")
                 significance_col.append(article["winner_score"])
+                award_col.append(article["winner_score"])
             else:
-                winner_col.append(f"{article['award']} {article['category']} Nom({article['nominee_score']}), ")
+                awards_col.append(f"{article['award']} {article['category']} Nom({article['nominee_score']}), ")
                 significance_col.append(article["nominee_score"])
-        table = table.assign(Awards=winner_col)
-        table = table.assign(Significance=significance_col)
+                award_col.append(article["nominee_score"])
+        award_col_title = f"{article['award']} {article['category']} ({article['winner_score']}/{article['nominee_score']})"
+        new_cols = {
+            "Awards": awards_col,
+            "Significance": significance_col,
+            award_col_title: award_col,
+        }
+        table = table.assign(**new_cols)
 
         # first middle middle+ last -> last, first middle middle+
         #
