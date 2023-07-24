@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 
 
+# NOTE! As of 2023-07-23, I fixed inconsistencies in the wikipedia Hugo and Nebula lists for the same title:
+#
+# 1. Thomas Disch should be Thomas M. Disch, as he is listed elsewhere on wikipedia and at e.g. https://www.thehugoawards.org/hugo-history/1981-hugo-awards/ (Novel and Novella articles)
+#
+# 2. Change Nebula Novel listing "Ursula Vernon (as T. Kingfisher)" to match Hugo which has "T. Kingfisher" that links to https://en.wikipedia.org/wiki/Ursula_Vernon. This is consistent with how she is credited at https://nebulas.sfwa.org/award-year/2022/. (Also "Nettle And->& Bone". This is actually not what the Nebula page says but it makes my life easier so don't tell anyone.)
+
+
 # TODO
 
 ## NOTE! As of 2023-07-17, there is no overlap between Hugo/Nebula Novel/Novellas and Locus Novels.
@@ -11,9 +18,9 @@
 ## Relatedly, not sure what to do about Category given this overlap.
 ### Separate .csv file? Separate .xlsx worksheet (eventually)? CLI option to specify behavior? Comment-it-out hack aka THE BRENDAN?
 
-## NOTE! As of 2023-07-17, I fixed inconsistencies in the wikipedia Hugo and Nebula lists for the same title:
-## XXX not yet 1. Thomas Disch should be Thomas M. Disch, as he is listed elsewhere on wikipedia and at e.g. https://www.thehugoawards.org/hugo-history/1981-hugo-awards/
-## XXX not yet 2. Change Nebula listing "Ursula Vernon (as T. Kingfisher)" to match Hugo which has "T. Kingfisher" that links to https://en.wikipedia.org/wiki/Ursula_Vernon. This is consistent with how she is credited at https://nebulas.sfwa.org/award-year/2022/
+## more data cleanup
+### press enter [] vs emoji ugh locus award page at http://www.sfadb.com/Locus_Awards_Winners_By_Category#nva uses the dumb brackets. maybe another thing to do for my convenience anyway
+### https://www.chicagomanualofstyle.org/qanda/data/faq/topics/Jr.Sr.III/faq0002.html says Miller, Walter M., Jr.
 
 ## column per award i guess. fillna to empty string
 ## if not, maybe move category back out to its own column (or nowhere if separate sheets)
@@ -324,6 +331,7 @@ def main():
         table = table[table[FINAL_AUTHOR_COLUMN_NAME] != "Not awarded"]
         table = table[table[FINAL_AUTHOR_COLUMN_NAME] != "(no award)+"]
 
+        print("Dropping some repeat entries")
         # The wikipedia article says, "_The Moon Is a Harsh Mistress_ was
         # serialized in 1965–66, and was allowed to be nominated for both
         # years."
