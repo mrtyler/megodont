@@ -1,46 +1,6 @@
 #!/usr/bin/env python
 
 
-# NOTE! As of 2023-07-23, I fixed inconsistencies in the wikipedia Hugo and Nebula lists for the same title:
-#
-# 1. Thomas Disch should be Thomas M. Disch, as he is listed elsewhere on wikipedia and at e.g. https://www.thehugoawards.org/hugo-history/1981-hugo-awards/ (Novel and Novella articles)
-#
-# 2. Change Nebula Novel listing "Ursula Vernon (as T. Kingfisher)" to match Hugo which has "T. Kingfisher" that links to https://en.wikipedia.org/wiki/Ursula_Vernon. This is consistent with how she is credited at https://nebulas.sfwa.org/award-year/2022/. (Also "Nettle And->& Bone". This is actually not what the Nebula page says but it makes my life easier so don't tell anyone.)
-
-
-# TODO
-
-## NOTE! As of 2023-07-17, there is no overlap between Hugo/Nebula Novel/Novellas and Locus Novels.
-## But there IS overlap between Nebula Novel and Locus Novella -- not sure how I'm going to handle this :O :
-## 1997.0,"Willis, Connie",Bellwether,5.0,"Nebula Novel Nom(4), Locus N'ella Win(1)",0.0,,
-## 1996.0,"Willis, Connie",Remake,5.0,"Hugo Novel Nom(4), Locus N'ella Win(1)",0.0,,
-##
-## Relatedly, not sure what to do about Category given this overlap.
-### Separate .csv file? Separate .xlsx worksheet (eventually)? CLI option to specify behavior? Comment-it-out hack aka THE BRENDAN?
-
-## more data cleanup
-### press enter [] vs emoji ugh locus award page at http://www.sfadb.com/Locus_Awards_Winners_By_Category#nva uses the dumb brackets. maybe another thing to do for my convenience anyway
-### https://www.chicagomanualofstyle.org/qanda/data/faq/topics/Jr.Sr.III/faq0002.html says Miller, Walter M., Jr. there are a few jr./sr. no iii or anything i can find aorn
-
-## column per award i guess. fillna to empty string
-## if not, maybe move category back out to its own column (or nowhere if separate sheets)
-## thinking of more complicated thing to make spreadsheeting easier: column per award, value is number of points. so uh i guess Hugo (4/10): 4, Nebula (4/10): 10, LocSF (0/1): 1. i think csv will still do calculation and fill in real Significance, but this opens door for spreadsheet-level customization where Signif col can be =sum(a7:a9) instead
-
-## add retro-hugos?
-## add other awards??
-
-## threads for wikipedia fetches
-### retries for wikipedia fetches?
-## caches for wikipedia fetches (invalidation seems hard so maybe a --clean option?)
-
-## generate .xlsx? sheet per category. do the formula lookup for Signif myself (maybe on a dedicated sheet because denormalized data lol)
-
-## break main into functions, sergeants/privates
-## write some tests for key functionality EL OH EL
-
-## do something different with multiple authors, translators, etc.?
-
-
 import os
 import re
 

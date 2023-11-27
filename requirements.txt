@@ -1,0 +1,5 @@
+beautifulsoup4  # for pandas
+flake8
+html5lib  # for pandas
+pandas
+pytest
