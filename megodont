@@ -4,6 +4,7 @@
 import os
 import re
 
+import click
 import pandas as pd
 
 
@@ -95,7 +96,6 @@ ARTICLES = [
 ]
 FINAL_AUTHOR_COLUMN_NAME = "Author"
 FINAL_TITLE_COLUMN_NAME = "Title"
-HUMAN_GENERATED_CSV = "books - books.csv.csv"
 
 def fetch_url(url):
     print(f"Fetching {url}...")
@@ -166,7 +166,7 @@ def resolve_duplicates(collected_table, table):
     return new_table
 
 
-def merge_or_init_human_columns(collected_table):
+def merge_or_init_human_columns(collected_table, infile):
     def init_human_columns(collected_table):
         collected_num_rows = collected_table.shape[0]
         # String "0" because of resolve_duplicates() things
@@ -177,8 +177,8 @@ def merge_or_init_human_columns(collected_table):
         collected_table = collected_table.assign(Notes=empty_col)
         return collected_table
 
-    def merge_human_columns(collected_table):
-        human_table = pd.read_csv(HUMAN_GENERATED_CSV)
+    def merge_human_columns(collected_table, infile):
+        human_table = pd.read_csv(infile)
         join_columns = [FINAL_AUTHOR_COLUMN_NAME, FINAL_TITLE_COLUMN_NAME]
         collected_table = collected_table.merge(human_table, on=join_columns, how="outer")
 
@@ -225,12 +225,15 @@ def merge_or_init_human_columns(collected_table):
 
     # Main logic
     collected_table = init_human_columns(collected_table)
-    if os.path.exists(HUMAN_GENERATED_CSV):
-        collected_table = merge_human_columns(collected_table)
+    if os.path.exists(infile):
+        collected_table = merge_human_columns(collected_table, infile)
     return collected_table
 
 
-def main():
+@click.command()
+@click.option("--infile", default="books - books.csv.csv", help="File with existing data to merge in")
+@click.option("--outfile", default="books.csv", help="Where to write the data at the end")
+def main(infile, outfile):
     collected_table = None
     for article in ARTICLES:
         tables = fetch_url(article["url"])
@@ -391,7 +394,7 @@ def main():
     collected_table[FINAL_TITLE_COLUMN_NAME] = collected_table[FINAL_TITLE_COLUMN_NAME].astype(str)
 
     print("Populating human-filled columns")
-    collected_table = merge_or_init_human_columns(collected_table)
+    collected_table = merge_or_init_human_columns(collected_table, infile)
 
     # Sort it out
     print("Sorting data")
@@ -401,7 +404,7 @@ def main():
     # Write it down
     print("Writing csv")
     #print(collected_table.to_csv())
-    with open(f"books.csv", "w") as ff:
+    with open(outfile, "w") as ff:
         ff.write(collected_table.to_csv(index=False))
 
 

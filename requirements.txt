@@ -1,4 +1,5 @@
 beautifulsoup4  # for pandas
+click
 flake8
 html5lib  # for pandas
 pandas
