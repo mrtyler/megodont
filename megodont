@@ -232,7 +232,7 @@ def merge_or_init_human_columns(collected_table, infile):
 
 @click.command()
 @click.option("--infile", default="books - books.csv.csv", help="File with existing data to merge in")
-@click.option("--outfile", default="books.csv", help="Where to write the data at the end")
+@click.option("--outfile", default="Megodont.csv", help="Where to write the data at the end")
 def main(infile, outfile):
     collected_table = None
     for article in ARTICLES:

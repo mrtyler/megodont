@@ -9,11 +9,19 @@ But a lot of stuff is hardcoded. There are no tests. There is no release process
 Here's a collection of things I'm at least thinking about before initial release. This includes a slightly less noisy distillation of what was left in the enormous TODO at the top of `wikipedia_books.py`.
 
 * ~Basic operations, removing hardcoded paths, command-line args~
-* Possibly along with/instead of the above: some way to generate/specify/persist Configs
+
+* Scraping
+** (Moving this up in priority because waiting for all the fetches is bad for the feedback loop and it's kinda anti-social anyway)
+** Local cache to prevent spurious fetches
+** Threads for fetches
+** Retries for fetches
+
+* Generate/specify/persist Configs
 ** To start, at least: default, tyler (copy of default probably)
 ** This framework feels important for a web or api interface
 ** Specify Config as JSON blob in file or via api
 ** Probably more of an MVP of this for a first pass
+** Good news: click effectively uses function args as its interface. I was thinking the web interface would do similar: a flask-decorated method to deal with http request and json blob mangling etc. that calls main()
 
 * Resolve the Beggars In Spain problem
 ** Separate files per category?
@@ -33,11 +41,6 @@ Here's a collection of things I'm at least thinking about before initial release
 
 * Docs
 ** Mostly links and how the above implemented stuff works
-
-* Scraping
-** Local cache to prevent spurious fetches
-** Threads for fetches
-** Retries for fetches
 
 * Generate .xlsx
 ** Enables additional features: one sheet per category instead of separate sheets (and/or all the optionality of this); formula to calculate Significance.

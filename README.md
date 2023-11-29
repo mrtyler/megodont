@@ -32,6 +32,7 @@ pyenv virtualenv megodont
 pyenv activate megodont
 pip install -r requirements.txt
 ./megodont
+vi Megodont.csv  # Generated with the default config
 ```
 
 ### Updating the base spreadsheet while retaining user-generated data (Ratings, Notes, etc.)
@@ -39,12 +40,10 @@ pip install -r requirements.txt
 Megodont will attempt to merge user-generated data from an existing spreadsheet.
 
 ```
-# Filename is hardcoded for now (:
-mv ~/Downloads/"books - books.csv.csv" .
-./megodont
+./megodont --infile Megodont-with-my-ratings-and-notes.csv
 ```
 
-Any rows with user-generated data that can't be merged with the (possibly updated) base spreadsheet are appended to the end. A design principle of Megodont is that it must not discard user-generated data!
+Any rows with user-generated data that can't be merged with the (possibly updated) base spreadsheet are appended to the end. A [design principle](DEVELOPMENT.md) of Megodont is that it must not discard user-generated data!
 
 
 ## Development
