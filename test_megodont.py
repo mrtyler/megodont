@@ -1,0 +1,5 @@
+import pytest
+
+import megodont
+
+
