@@ -2,7 +2,9 @@
 
 
 from functools import wraps
+import logging
 import os
+import math
 import re
 import sys
 import time
@@ -133,10 +135,13 @@ def get_or_make_cache_dir():
 
 
 def get_age(file):
+    if not os.path.exists(file):
+        return math.inf
     return (time.time() - os.path.getmtime(file)) / 86400  # days
 
 
 async def fetch_urls(articles, force_refetch=False):
+    logging.warning("Fetching data sources...")
     cache_dir = get_or_make_cache_dir()
     # Use a set to weed out duplicates, both to be nice to remote servers
     # and to prevent collisions while writing cache files async :).
@@ -146,10 +151,15 @@ async def fetch_urls(articles, force_refetch=False):
             cache_file = os.path.join(cache_dir, get_cache_filename(url))
             cache_file_age = get_age(cache_file)
             if force_refetch or cache_file_age > CACHE_FILE_MAX_AGE_DAYS:
+                logging.info(f"...fetching {url}")
+                logging.debug(f"......to {cache_file} (age {cache_file_age}, max age {CACHE_FILE_MAX_AGE_DAYS}, force {force_refetch})")
                 async with session.get(url) as response:
                     html = await response.text()
                     with open(cache_file, "w") as ff:
                         ff.write(html)
+            else:
+                logging.info(f"...skipping {url} because it is cached")
+                logging.debug(f"......to {cache_file} (age {cache_file_age}, max age {CACHE_FILE_MAX_AGE_DAYS}, force {force_refetch})")
 
 
 def fetch_url(url):
@@ -287,9 +297,10 @@ def merge_or_init_human_columns(collected_table, infile):
 
 @click.command()
 @click.option("--infile", default=None, help="File with existing data to merge in")
+@click.option("--loglevel", default="info", help="Verbosity of log output ('debug' through 'error')")
 @click.option("--outfile", default="Megodont.csv", help="Where to write the data at the end")
 @make_sync
-async def main(infile, outfile):
+async def main(infile, loglevel, outfile):
     # CLI validation. This should move elsewhere. Like to a wrapper script that implements the same interface as a web client, maybe.
     if infile and not os.path.exists(infile):
         print("You specified --infile but I can't find it :(. Exiting.")
@@ -297,12 +308,16 @@ async def main(infile, outfile):
         sys.exit(2)
     if infile is None:
         infile = "books - books.csv.csv"
+    numeric_loglevel = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numeric_loglevel, int):
+        raise ValueError(f'Invalid log level: {loglevel}')
+
+    logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=loglevel.upper())
 
     collected_table = None
     for article in ARTICLES:
         tables = fetch_url(article["url"])
         table = find_target_table(tables, article)
-        num_rows = table.shape[0]
 
         table = drop_unwanted_columns(table, article)
 
