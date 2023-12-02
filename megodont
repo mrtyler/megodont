@@ -133,7 +133,7 @@ def get_or_make_cache_dir():
 
 
 def get_age(file):
-    return (os.path.getmtime(file) - time.time()) // 86400  # days
+    return (time.time() - os.path.getmtime(file)) / 86400  # days
 
 
 async def fetch_urls(articles, force_refetch=False):
