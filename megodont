@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
 
+from functools import wraps
 import os
 import re
 import sys
+import time
 
+import aiohttp
+import asyncio
 import click
 import pandas as pd
 
@@ -95,8 +99,58 @@ ARTICLES = [
         "winners_only": True,
     },
 ]
+CACHE_DIR_NAME = "_cache"
+CACHE_FILE_MAX_AGE_DAYS = 1
 FINAL_AUTHOR_COLUMN_NAME = "Author"
 FINAL_TITLE_COLUMN_NAME = "Title"
+
+
+# From https://github.com/pallets/click/issues/2033
+def make_sync(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return asyncio.run(func(*args, **kwargs))
+    return wrapper
+
+
+def get_cache_filename(url):
+    """
+    >>> get_cache_filename("https://foo.com/bar/baz")
+    'foo.com__bar__baz'
+    """
+    return url.partition("://")[2].replace("/", "__")
+
+
+def get_or_make_cache_dir():
+    """
+    >>> get_or_make_cache_dir()
+    '_cache'
+    """
+    dirname = CACHE_DIR_NAME
+    # This gets created under (doc)test as a side-effect :/
+    os.makedirs(dirname, exist_ok=True)
+    return dirname
+
+
+def get_age(file):
+    return (os.path.getmtime(file) - time.time()) // 86400  # days
+
+
+async def fetch_urls(articles, force_refetch=False):
+    cache_dir = get_or_make_cache_dir()
+    # Use a set to weed out duplicates, both to be nice to remote servers
+    # and to prevent collisions while writing cache files async :).
+    urls = set([article["url"] for article in articles])
+    async with aiohttp.ClientSession() as session:
+        for url in urls:
+            cache_file = os.path.join(cache_dir, get_cache_filename(url))
+            cache_file_age = get_age(cache_file)
+            if force_refetch or cache_file_age > CACHE_FILE_MAX_AGE_DAYS:
+                async with session.get(url) as response:
+                    html = await response.text()
+                    with open(cache_file, "w") as ff:
+                        ff.write(html)
+
 
 def fetch_url(url):
     print(f"Fetching {url}...")
@@ -234,7 +288,8 @@ def merge_or_init_human_columns(collected_table, infile):
 @click.command()
 @click.option("--infile", default=None, help="File with existing data to merge in")
 @click.option("--outfile", default="Megodont.csv", help="Where to write the data at the end")
-def main(infile, outfile):
+@make_sync
+async def main(infile, outfile):
     # CLI validation. This should move elsewhere. Like to a wrapper script that implements the same interface as a web client, maybe.
     if infile and not os.path.exists(infile):
         print("You specified --infile but I can't find it :(. Exiting.")

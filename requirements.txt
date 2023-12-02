@@ -1,3 +1,4 @@
+aiohttp[speedups]
 beautifulsoup4  # for pandas
 click
 flake8

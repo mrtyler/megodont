@@ -1,3 +1,4 @@
 *.csv
 *.csv.[0-9]
+_cache/
 old_csv/
