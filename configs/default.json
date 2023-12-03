@@ -1,0 +1,87 @@
+[
+    {
+        "author_column": "Author(s)",
+        "award": "Hugo",
+        "category": "Novel",
+        "nominee_score": 4,
+        "target_table_columns": ["Year", "Author(s)", "Novel"],
+        "title_column": "Novel",
+        "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novel",
+        "winner_score": 10
+    },
+    {
+        "author_column": "Author",
+        "award": "Nebula",
+        "category": "Novel",
+        "nominee_score": 4,
+        "target_table_columns": ["Year", "Author", "Novel"],
+        "title_column": "Novel",
+        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
+        "winner_score": 10
+    },
+    {
+        "author_column": "Author",
+        "award": "Locus",
+        "category": "Novel",
+        "nominee_score": 0,
+        "target_table_columns": ["Year", "Author", "Nominated Work"],
+        "title_column": "Nominated Work",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Novel",
+        "winner_score": 1,
+        "winners_only": true
+    },
+    {
+        "author_column": "Author",
+        "award": "LocSf",
+        "category": "Novel",
+        "nominee_score": 0,
+        "target_table_columns": ["Year", "Author", "Nominated Work[1]"],
+        "title_column": "Nominated Work[1]",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Science_Fiction_Novel",
+        "winner_score": 1,
+        "winners_only": true
+    },
+    {
+        "author_column": "Author",
+        "award": "LocF",
+        "category": "Novel",
+        "nominee_score": 0,
+        "target_table_columns": ["Year", "Author", "Novel"],
+        "title_column": "Novel",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Fantasy_Novel",
+        "winner_score": 1,
+        "winners_only": true
+    },
+    {
+        "author_column": "Author(s)",
+        "award": "Hugo",
+        "category": "N'ella",
+        "nominee_score": 4,
+        "target_table_columns": ["Year", "Author(s)", "Novella"],
+        "title_column": "Novella",
+        "url": "https://en.wikipedia.org/wiki/Hugo_Award_for_Best_Novella",
+        "winner_score": 10
+    },
+    {
+        "author_column": "Author",
+        "award": "Nebula",
+        "category": "N'ella",
+        "nominee_score": 4,
+        "target_table_columns": ["Year", "Author", "Novella"],
+        "title_column": "Novella",
+        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novella",
+        "winner_score": 10
+    },
+    {
+        "author_column": "Author",
+        "award": "Locus",
+        "category": "N'ella",
+        "nominee_score": 0,
+        "target_table_columns": ["Year", "Author", "Novella"],
+        "title_column": "Novella",
+        "url": "https://en.wikipedia.org/wiki/Locus_Award_for_Best_Novella",
+        "winner_score": 1,
+        "winners_only": true
+    }
+]
+
