@@ -2,6 +2,7 @@
 
 
 from functools import wraps
+import json
 import logging
 import os
 import math
@@ -55,11 +56,11 @@ def get_age(file):
     return (time.time() - os.path.getmtime(file)) / 86400  # days
 
 
-async def fetch_urls(articles, force_refetch=False):
+async def fetch_urls(data_sources, force_refetch=False):
     logging.warning("Fetching data sources...")
     # Use a set to weed out duplicates, both to be nice to remote servers
     # and to prevent collisions while writing cache files async :).
-    urls = set([article["url"] for article in articles])
+    urls = set([source["url"] for source in data_sources])
     # From https://stackoverflow.com/questions/35196974/aiohttp-set-maximum-number-of-requests-per-second
     # Picking very conservative numbers for now.
     connector = aiohttp.TCPConnector(limit=5, limit_per_host=2)
@@ -85,10 +86,10 @@ def read_url(url):
     return tables
 
 
-def find_target_table(tables, article):
+def find_target_table(tables, source):
     target_table = None
     for table in tables:
-        if all([column in table.columns for column in article["target_table_columns"]]):
+        if all([column in table.columns for column in source["target_table_columns"]]):
             target_table = table
             break
     else:
@@ -96,9 +97,9 @@ def find_target_table(tables, article):
     return target_table
 
 
-def drop_unwanted_columns(table, article):
+def drop_unwanted_columns(table, source):
     for column in table.columns:
-        if column not in article["target_table_columns"]:
+        if column not in source["target_table_columns"]:
             print(f"Dropping column {column}")
             table = table.drop(column, axis=1)
     return table
@@ -213,39 +214,47 @@ def merge_or_init_human_columns(collected_table, infile):
 
 
 @click.command()
+@click.option("--configfile", default="configs/default.json", show_default=True, help="JSON config file describing data sources (e.g. Wikipedia articles) to collect.")
 @click.option("--force-refetch/--no-force-refetch", default=False, show_default=True, help="Ignore existing cache and re-fetch data sources")
 @click.option("--infile", default=None, help="File with existing data to merge in")
 @click.option("--loglevel", default="info", show_default=True, help="Verbosity of log output ('debug' through 'error')")
 @click.option("--outfile", default="Megodont.csv", show_default=True, help="Where to write the data at the end")
 @make_sync
-async def main(force_refetch, infile, loglevel, outfile):
+async def main(configfile, force_refetch, infile, loglevel, outfile):
     # CLI validation. This should move elsewhere. Like to a wrapper script that implements the same interface as a web client, maybe.
     if infile and not os.path.exists(infile):
-        print("You specified --infile but I can't find it :(. Exiting.")
+        print(f"You specified --infile {infile} but I can't find it :(. Exiting.")
         # Another reason to move this to a CLI-only area.
         sys.exit(2)
     if infile is None:
         infile = "books - books.csv.csv"
+
     numeric_loglevel = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_loglevel, int):
         raise ValueError(f'Invalid log level: {loglevel}')
-
     logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=loglevel.upper())
 
-    await fetch_urls(ARTICLES, force_refetch)
+    if configfile and not os.path.exists(configfile):
+        print(f"You specified --configfile {configfile} but I can't find it :(. Exiting.")
+        # Another reason to move this to a CLI-only area.
+        sys.exit(2)
+    with open(configfile, "r") as cf:
+        data_sources = json.load(cf)
+
+    await fetch_urls(data_sources, force_refetch)
 
     collected_table = None
-    for article in ARTICLES:
+    for source in data_sources:
 
-        tables = read_url(article["url"])
-        table = find_target_table(tables, article)
+        tables = read_url(source["url"])
+        table = find_target_table(tables, source)
 
-        table = drop_unwanted_columns(table, article)
+        table = drop_unwanted_columns(table, source)
 
         print("Normalizing author and title column names")
         table = table.rename(columns={
-            article["author_column"]: FINAL_AUTHOR_COLUMN_NAME,
-            article["title_column"]: FINAL_TITLE_COLUMN_NAME,
+            source["author_column"]: FINAL_AUTHOR_COLUMN_NAME,
+            source["title_column"]: FINAL_TITLE_COLUMN_NAME,
         })
 
         print("Cleaning up text")
@@ -337,15 +346,15 @@ async def main(force_refetch, infile, loglevel, outfile):
         award_col = []
         significance_col = []
         for row in table.iterrows():
-            if row[1][FINAL_AUTHOR_COLUMN_NAME].endswith("*") or article.get("winners_only"):
-                awards_col.append(f"{article['award']} {article['category']} Win({article['winner_score']}), ")
-                significance_col.append(article["winner_score"])
-                award_col.append(article["winner_score"])
+            if row[1][FINAL_AUTHOR_COLUMN_NAME].endswith("*") or source.get("winners_only"):
+                awards_col.append(f"{source['award']} {source['category']} Win({source['winner_score']}), ")
+                significance_col.append(source["winner_score"])
+                award_col.append(source["winner_score"])
             else:
-                awards_col.append(f"{article['award']} {article['category']} Nom({article['nominee_score']}), ")
-                significance_col.append(article["nominee_score"])
-                award_col.append(article["nominee_score"])
-        award_col_title = f"{article['award']} {article['category']} ({article['winner_score']}/{article['nominee_score']})"
+                awards_col.append(f"{source['award']} {source['category']} Nom({source['nominee_score']}), ")
+                significance_col.append(source["nominee_score"])
+                award_col.append(source["nominee_score"])
+        award_col_title = f"{source['award']} {source['category']} ({source['winner_score']}/{source['nominee_score']})"
         new_cols = {
             "Awards": awards_col,
             "Significance": significance_col,
