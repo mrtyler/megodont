@@ -118,9 +118,10 @@ def make_sync(func):
 def get_cache_filename(url):
     """
     >>> get_cache_filename("https://foo.com/bar/baz")
-    'foo.com__bar__baz'
+    '_cache/foo.com__bar__baz'
     """
-    return url.partition("://")[2].replace("/", "__")
+    filename = url.partition("://")[2].replace("/", "__")
+    return os.path.join(get_or_make_cache_dir(), filename)
 
 
 def get_or_make_cache_dir():
@@ -142,7 +143,6 @@ def get_age(file):
 
 async def fetch_urls(articles, force_refetch=False):
     logging.warning("Fetching data sources...")
-    cache_dir = get_or_make_cache_dir()
     # Use a set to weed out duplicates, both to be nice to remote servers
     # and to prevent collisions while writing cache files async :).
     urls = set([article["url"] for article in articles])
@@ -151,7 +151,7 @@ async def fetch_urls(articles, force_refetch=False):
     connector = aiohttp.TCPConnector(limit=5, limit_per_host=2)
     async with aiohttp.ClientSession(connector=connector, raise_for_status=True) as session:
         for url in urls:
-            cache_file = os.path.join(cache_dir, get_cache_filename(url))
+            cache_file = get_cache_filename(url)
             cache_file_age = get_age(cache_file)
             if force_refetch or cache_file_age > CACHE_FILE_MAX_AGE_DAYS:
                 logging.info(f"...fetching {url}")
@@ -165,9 +165,9 @@ async def fetch_urls(articles, force_refetch=False):
                 logging.debug(f"......to {cache_file} (age {cache_file_age}, max age {CACHE_FILE_MAX_AGE_DAYS}, force {force_refetch})")
 
 
-def fetch_url(url):
-    print(f"Fetching {url}...")
-    tables = pd.read_html(url, flavor="bs4")
+def read_url(url):
+    logging.info(f"Reading {url}...")
+    tables = pd.read_html(get_cache_filename(url), flavor="bs4")
     return tables
 
 
@@ -299,11 +299,12 @@ def merge_or_init_human_columns(collected_table, infile):
 
 
 @click.command()
+@click.option("--force-refetch/--no-force-refetch", default=False, show_default=True, help="Ignore existing cache and re-fetch data sources")
 @click.option("--infile", default=None, help="File with existing data to merge in")
-@click.option("--loglevel", default="info", help="Verbosity of log output ('debug' through 'error')")
-@click.option("--outfile", default="Megodont.csv", help="Where to write the data at the end")
+@click.option("--loglevel", default="info", show_default=True, help="Verbosity of log output ('debug' through 'error')")
+@click.option("--outfile", default="Megodont.csv", show_default=True, help="Where to write the data at the end")
 @make_sync
-async def main(infile, loglevel, outfile):
+async def main(force_refetch, infile, loglevel, outfile):
     # CLI validation. This should move elsewhere. Like to a wrapper script that implements the same interface as a web client, maybe.
     if infile and not os.path.exists(infile):
         print("You specified --infile but I can't find it :(. Exiting.")
@@ -317,9 +318,12 @@ async def main(infile, loglevel, outfile):
 
     logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=loglevel.upper())
 
+    await fetch_urls(ARTICLES, force_refetch)
+
     collected_table = None
     for article in ARTICLES:
-        tables = fetch_url(article["url"])
+
+        tables = read_url(article["url"])
         table = find_target_table(tables, article)
 
         table = drop_unwanted_columns(table, article)
