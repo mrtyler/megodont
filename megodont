@@ -146,7 +146,10 @@ async def fetch_urls(articles, force_refetch=False):
     # Use a set to weed out duplicates, both to be nice to remote servers
     # and to prevent collisions while writing cache files async :).
     urls = set([article["url"] for article in articles])
-    async with aiohttp.ClientSession() as session:
+    # From https://stackoverflow.com/questions/35196974/aiohttp-set-maximum-number-of-requests-per-second
+    # Picking very conservative numbers for now.
+    connector = aiohttp.TCPConnector(limit=5, limit_per_host=2)
+    async with aiohttp.ClientSession(connector=connector, raise_for_status=True) as session:
         for url in urls:
             cache_file = os.path.join(cache_dir, get_cache_filename(url))
             cache_file_age = get_age(cache_file)
