@@ -1,0 +1,12 @@
+[
+    {
+        "author_column": "Author",
+        "award": "Nebula",
+        "category": "Novel",
+        "nominee_score": 42,
+        "target_table_columns": ["Year", "Author", "Novel"],
+        "title_column": "Novel",
+        "url": "https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
+        "winner_score": 69
+    }
+]
