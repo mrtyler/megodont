@@ -31,7 +31,7 @@ If you're in a hurry, you can raw-dog it and go straight to the `pip install` st
 pyenv virtualenv megodont
 pyenv activate megodont
 pip install -r requirements.txt
-./megodont
+./megodont.py
 vi Megodont.csv  # Generated with the default config
 ```
 
@@ -40,7 +40,7 @@ vi Megodont.csv  # Generated with the default config
 Megodont will attempt to merge user-generated data from an existing spreadsheet.
 
 ```
-./megodont --infile Megodont-with-my-ratings-and-notes.csv
+./megodont.py --infile Megodont-with-my-ratings-and-notes.csv
 ```
 
 Any rows with user-generated data that can't be merged with the (possibly updated) base spreadsheet are appended to the end. A [design principle](DEVELOPMENT.md) of Megodont is that it must not discard user-generated data!
