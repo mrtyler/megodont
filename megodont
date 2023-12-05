@@ -124,10 +124,10 @@ def resolve_duplicates(collected_table, table):
     # sensible defaults so later concatenation makes sense (and doesn't result
     # in NaN everywhere)
     fill_values = {
-        "Year_x": 99999,  # Must be > all real years so we can drop it with min() later
+        "Year_x": 999999,  # Must be > all real years so we can drop it with min() later
         "Significance_x": 0,
         "Awards_x": "",
-        "Year_y": 99999,  # Must be > all real years so we can drop it with min() later
+        "Year_y": 999999,  # Must be > all real years so we can drop it with min() later
         "Significance_y": 0,
         "Awards_y": "",
     }
