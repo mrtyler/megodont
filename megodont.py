@@ -407,8 +407,8 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
 
     # Sort it out
     print("Sorting data")
-    collected_table = collected_table.sort_values(by=["Year"],)
-    collected_table = collected_table.sort_values(by=["Significance", "Awards"], ascending=False)
+    collected_table = collected_table.sort_values(by=["Year", "WhenRead"],)
+    collected_table = collected_table.sort_values(by=["Significance", "Rating", "Awards"], ascending=False)
 
     # Write it down
     print("Writing csv")
