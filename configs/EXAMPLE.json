@@ -1,0 +1,16 @@
+# This isn't a real json file (as this illegal comment illustrates)!
+#
+# It is here to documens the json format for configs.
+
+[
+    {
+        "author_column": "Name of the column containing the name of the Author(s) -- e.g. Author",
+        "award": "Name of the Award -- e.g. Nebula, Hugo",
+        "category": "Name of the Award category -- e.g. Novel, Novella (or N'ella for short), Novelette/N'ette",
+        "nominee_score": "INTEGER (no quotes) number of points for Nominees for the Award -- e.g. 4",
+        "target_table_columns": ["List of columns that appear in (and thus identify) the target table in the data source -- e.g.", "Year", "Author", "Novel"],
+        "title_column": "Name of the column containing the name of the Title -- e.g. Novel, Nominated Work",
+        "url": "URL containig the data -- e.g. https://en.wikipedia.org/wiki/Nebula_Award_for_Best_Novel",
+        "winner_score": "INTEGER (no quotes) number of points for Winners of the Award -- e.g. 69"
+    }
+]
