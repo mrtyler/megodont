@@ -397,10 +397,6 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
     print("Final cleanup")
     collected_table = collected_table.replace(to_replace={"Awards": r", $"}, value={"Awards": r""}, regex=True)
     collected_table["Significance"] = collected_table["Significance"].astype(int)
-    # TODO Only bother with this if it fixes titles like "2312" getting parsed
-    # as numbers and right-justified. Otherwise, make a note for .xlsx time to
-    # force left-justify on this column!
-    collected_table[FINAL_TITLE_COLUMN_NAME] = collected_table[FINAL_TITLE_COLUMN_NAME].astype(str)
 
     print("Populating human-filled columns")
     collected_table = merge_or_init_human_columns(collected_table, infile)
