@@ -411,7 +411,6 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
 
     # Write it down
     print("Writing csv")
-    #print(collected_table.to_csv())
     with open(outfile, "w") as ff:
         ff.write(collected_table.to_csv(index=False))
 
