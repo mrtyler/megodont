@@ -112,7 +112,7 @@ def resolve_duplicates(collected_table, table):
     for tt in (collected_table, table):
         tt["Year"] = tt["Year"].astype(str)
 
-    join_columns = [FINAL_AUTHOR_COLUMN_NAME, FINAL_TITLE_COLUMN_NAME]
+    join_columns = [FINAL_AUTHOR_COLUMN_NAME, FINAL_TITLE_COLUMN_NAME, "Category"]
     new_table = pd.merge(
         collected_table,
         table,
@@ -357,6 +357,8 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
         award_col_title = f"{source['award']} {source['category']} ({source['winner_score']}/{source['nominee_score']})"
         new_cols = {
             "Awards": awards_col,
+            # Only used for joining; will be dropped later
+            "Category": [source['category'] for _ in range(table.shape[0])],
             "Significance": significance_col,
             award_col_title: award_col,
         }
@@ -396,6 +398,7 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
 
     print("Final cleanup")
     collected_table = collected_table.replace(to_replace={"Awards": r", $"}, value={"Awards": r""}, regex=True)
+    collected_table = collected_table.drop("Category", axis=1)
     collected_table["Significance"] = collected_table["Significance"].astype(int)
 
     print("Populating human-filled columns")
