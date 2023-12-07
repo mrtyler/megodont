@@ -10,28 +10,17 @@ Here's a collection of things I'm at least thinking about before initial release
 
 * ~Basic operations, removing hardcoded paths, command-line args~
 
-* Scraping
-** (Moving this up in priority because waiting for all the fetches is bad for the feedback loop and it's kinda anti-social anyway)
-** Local cache to prevent spurious fetches
-** Threads for fetches
-** Retries for fetches
+* ~Generate/specify/persist Configs~
 
-* Generate/specify/persist Configs
-** To start, at least: default, tyler (copy of default probably)
-** This framework feels important for a web or api interface
-** Specify Config as JSON blob in file or via api
-** Probably more of an MVP of this for a first pass
-** Good news: click effectively uses function args as its interface. I was thinking the web interface would do similar: a flask-decorated method to deal with http request and json blob mangling etc. that calls main()
+* ~Scraping improvements~
+** ~Cache pages locally. Add --force-refetch~
+** ~Use aiohttp for better performance later. Add conservative throttling~
 
 * Resolve the Beggars In Spain problem
 ** Separate files per category?
 ** One file but join on category so they stay separate?
 ** Configurable behavior for this choice?
-
-* Code cleanup
-** Organize things into functions more seriously
-** Basic unit test scaffolding
-** Specifically some kind of acceptance test related to user-generated data!
+** Grab everything and filter at the end or go category by cateory through `config[*]["category"]`?
 
 * CI/CD and Releases
 ** Github Actions seems simple/easy enough
@@ -39,13 +28,29 @@ Here's a collection of things I'm at least thinking about before initial release
 ** Drive integration deserves its own bullet. Dedicated account (presumably). Versioning/naming?
 ** Github integration also deserves a bullet. Maybe I need Terraform (with accompanying Github integration plus potentially AWS integration) to IaC config of the Github repo?
 
+* Code cleanup
+** Organize things into functions more seriously
+** Basic unit test scaffolding
+** Specifically some kind of acceptance test related to user-generated data!
+** SOON move make_sync to this level and do hopefully "true" async here (and make main() decorator situation less confusing)
+** SOON need to establish cli.py
+** LATER Retries for fetches, maybe backoff
+*** ```
+if response.status not in (200, 429,):
+     raise aiohttp.ClientResponseError()
+```
+** LATER support file:/// (maybe specially as i guess aiohttp isn't smart enough? or maybe i need that third / and an absolute path?) or some other way to specify non-http data sources
+** LATER setuptools or whatever wrapper can be the undecorated megodont entry point.
+** LATER remove my real ratings and such for better/smaller surface area'd canned data?
+
 * Docs
 ** Mostly links and how the above implemented stuff works
 
-* Generate .xlsx
-** Enables additional features: one sheet per category instead of separate sheets (and/or all the optionality of this); formula to calculate Significance.
-
 * Data improvements
+** Combine multiple author entries: co-authors, translators, etc.
 ** More categories (novellettes), more awards (retro hugos, British Sci-Fi one, etc.)
 ** Specific entry cleanup: Press Enter [emoji]; Walter M. Miller, Jr. and james tiptree, jr.; Connie Willis Bellwether/Remake Nebula Novel/Locus Novella overlap
-** Combine multiple author entries: co-authors, translators, etc.
+
+* Generate .xlsx
+** Enables additional features: one sheet per category instead of separate sheets (and/or all the optionality of this); formula to calculate Significance.
+** Title "2312" gets right-justified because it's a number. astype(str) doesn't help, so looks like this needs to be fixed with left-justify specifically
