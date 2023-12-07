@@ -27,6 +27,7 @@ def make_sync(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         return asyncio.run(func(*args, **kwargs))
+
     return wrapper
 
 
@@ -64,20 +65,26 @@ async def fetch_urls(data_sources, force_refetch=False):
     # From https://stackoverflow.com/questions/35196974/aiohttp-set-maximum-number-of-requests-per-second
     # Picking very conservative numbers for now.
     connector = aiohttp.TCPConnector(limit=5, limit_per_host=2)
-    async with aiohttp.ClientSession(connector=connector, raise_for_status=True) as session:
+    async with aiohttp.ClientSession(
+        connector=connector, raise_for_status=True
+    ) as session:
         for url in urls:
             cache_file = get_cache_filename(url)
             cache_file_age = get_age(cache_file)
             if force_refetch or cache_file_age > CACHE_FILE_MAX_AGE_DAYS:
                 logging.info(f"...fetching {url}")
-                logging.debug(f"......to {cache_file} (age {cache_file_age}, max age {CACHE_FILE_MAX_AGE_DAYS}, force {force_refetch})")
+                logging.debug(
+                    f"......to {cache_file} (age {cache_file_age}, max age {CACHE_FILE_MAX_AGE_DAYS}, force {force_refetch})"
+                )
                 async with session.get(url) as response:
                     html = await response.text()
                     with open(cache_file, "w") as ff:
                         ff.write(html)
             else:
                 logging.info(f"...skipping {url} because it is cached")
-                logging.debug(f"......to {cache_file} (age {cache_file_age}, max age {CACHE_FILE_MAX_AGE_DAYS}, force {force_refetch})")
+                logging.debug(
+                    f"......to {cache_file} (age {cache_file_age}, max age {CACHE_FILE_MAX_AGE_DAYS}, force {force_refetch})"
+                )
 
 
 def read_url(url):
@@ -138,10 +145,19 @@ def resolve_duplicates(collected_table, table):
     # see.
     for column in ("Year",):
         # Use insert() to keep Year as the first column
-        new_table.insert(0, column, new_table[f"{column}_x"].astype(int).combine(new_table[f"{column}_y"].astype(int), min))
+        new_table.insert(
+            0,
+            column,
+            new_table[f"{column}_x"]
+            .astype(int)
+            .combine(new_table[f"{column}_y"].astype(int), min),
+        )
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
-    for column in ("Significance", "Awards",):
+    for column in (
+        "Significance",
+        "Awards",
+    ):
         new_table[column] = new_table[f"{column}_x"] + new_table[f"{column}_y"]
         new_table = new_table.drop(f"{column}_x", axis=1)
         new_table = new_table.drop(f"{column}_y", axis=1)
@@ -163,14 +179,26 @@ def merge_or_init_human_columns(collected_table, infile):
     def merge_human_columns(collected_table, infile):
         human_table = pd.read_csv(infile)
         join_columns = [FINAL_AUTHOR_COLUMN_NAME, FINAL_TITLE_COLUMN_NAME]
-        collected_table = collected_table.merge(human_table, on=join_columns, how="outer")
+        collected_table = collected_table.merge(
+            human_table, on=join_columns, how="outer"
+        )
 
-        if any([f"{col}_x" in collected_table.columns or f"{col}_y" in collected_table.columns for col in join_columns]):
+        if any(
+            [
+                f"{col}_x" in collected_table.columns
+                or f"{col}_y" in collected_table.columns
+                for col in join_columns
+            ]
+        ):
             raise ValueError("Eyyyyyyy column mismatch??")
 
         # Resolve "conflicts" by taking the right (human-generated csv) side
         # for the human-managed columns...
-        human_columns = ("Rating", "WhenRead", "Notes",)
+        human_columns = (
+            "Rating",
+            "WhenRead",
+            "Notes",
+        )
         for column in human_columns:
             collected_table[column] = collected_table[f"{column}_y"]
             collected_table = collected_table.drop(f"{column}_x", axis=1)
@@ -185,8 +213,12 @@ def merge_or_init_human_columns(collected_table, infile):
                     collected_table.insert(0, column_root, collected_table[column])
                 # Everything else to the right, but left of human-managed columns
                 else:
-                    left_of_human_columns_pos = len(collected_table.columns) - len(human_columns)
-                    collected_table.insert(left_of_human_columns_pos, column_root, collected_table[column])
+                    left_of_human_columns_pos = len(collected_table.columns) - len(
+                        human_columns
+                    )
+                    collected_table.insert(
+                        left_of_human_columns_pos, column_root, collected_table[column]
+                    )
                 collected_table = collected_table.drop(column, axis=1)
             elif column.endswith("_y"):
                 collected_table = collected_table.drop(column, axis=1)
@@ -214,11 +246,31 @@ def merge_or_init_human_columns(collected_table, infile):
 
 
 @click.command()
-@click.option("--configfile", default="configs/default.json", show_default=True, help="JSON config file describing data sources (e.g. Wikipedia articles) to collect.")
-@click.option("--force-refetch/--no-force-refetch", default=False, show_default=True, help="Ignore existing cache and re-fetch data sources")
+@click.option(
+    "--configfile",
+    default="configs/default.json",
+    show_default=True,
+    help="JSON config file describing data sources (e.g. Wikipedia articles) to collect.",
+)
+@click.option(
+    "--force-refetch/--no-force-refetch",
+    default=False,
+    show_default=True,
+    help="Ignore existing cache and re-fetch data sources",
+)
 @click.option("--infile", default=None, help="File with existing data to merge in")
-@click.option("--loglevel", default="info", show_default=True, help="Verbosity of log output ('debug' through 'error')")
-@click.option("--outfile", default="Megodont.csv", show_default=True, help="Where to write the data at the end")
+@click.option(
+    "--loglevel",
+    default="info",
+    show_default=True,
+    help="Verbosity of log output ('debug' through 'error')",
+)
+@click.option(
+    "--outfile",
+    default="Megodont.csv",
+    show_default=True,
+    help="Where to write the data at the end",
+)
 @make_sync
 async def main(configfile, force_refetch, infile, loglevel, outfile):
     # CLI validation. This should move elsewhere. Like to a wrapper script that implements the same interface as a web client, maybe.
@@ -231,11 +283,15 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
 
     numeric_loglevel = getattr(logging, loglevel.upper(), None)
     if not isinstance(numeric_loglevel, int):
-        raise ValueError(f'Invalid log level: {loglevel}')
-    logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=loglevel.upper())
+        raise ValueError(f"Invalid log level: {loglevel}")
+    logging.basicConfig(
+        format="%(asctime)s:%(levelname)s:%(message)s", level=loglevel.upper()
+    )
 
     if configfile and not os.path.exists(configfile):
-        print(f"You specified --configfile {configfile} but I can't find it :(. Exiting.")
+        print(
+            f"You specified --configfile {configfile} but I can't find it :(. Exiting."
+        )
         # Another reason to move this to a CLI-only area.
         sys.exit(2)
     with open(configfile, "r") as cf:
@@ -245,17 +301,18 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
 
     collected_table = None
     for source in data_sources:
-
         tables = read_url(source["url"])
         table = find_target_table(tables, source)
 
         table = drop_unwanted_columns(table, source)
 
         print("Normalizing author and title column names")
-        table = table.rename(columns={
-            source["author_column"]: FINAL_AUTHOR_COLUMN_NAME,
-            source["title_column"]: FINAL_TITLE_COLUMN_NAME,
-        })
+        table = table.rename(
+            columns={
+                source["author_column"]: FINAL_AUTHOR_COLUMN_NAME,
+                source["title_column"]: FINAL_TITLE_COLUMN_NAME,
+            }
+        )
 
         print("Cleaning up text")
         # Remove footnote links like 2015[e] -> 2015
@@ -296,7 +353,9 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
         # exception by hand. A TODO-able alternative is to do another merge
         # pass with logic that understands "Foo" and "Foo (also known as Bar)"
         # are the same and we should keep the longer form.
-        table = table.replace(to_replace=r' \(also known as .*\)$', value=r"", regex=True)
+        table = table.replace(
+            to_replace=r" \(also known as .*\)$", value=r"", regex=True
+        )
 
         print("Dropping rows when no award given")
         # Drop "Not awarded" and variants
@@ -312,8 +371,10 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
         # Novel Nomination and go with the 1967 Hugo Novel Win (which will
         # later merge with the 1967 Nebula Novel Nomination).
         table = table.drop(
-            table[(table[FINAL_TITLE_COLUMN_NAME] == "The Moon Is a Harsh Mistress") & (table["Year"] == "1966")]
-            .index
+            table[
+                (table[FINAL_TITLE_COLUMN_NAME] == "The Moon Is a Harsh Mistress")
+                & (table["Year"] == "1966")
+            ].index
         )
 
         # Similar to the TMiaHM situation, wikipedia says, "_Dune World_ was
@@ -346,19 +407,25 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
         award_col = []
         significance_col = []
         for row in table.iterrows():
-            if row[1][FINAL_AUTHOR_COLUMN_NAME].endswith("*") or source.get("winners_only"):
-                awards_col.append(f"{source['award']} {source['category']} Win({source['winner_score']}), ")
+            if row[1][FINAL_AUTHOR_COLUMN_NAME].endswith("*") or source.get(
+                "winners_only"
+            ):
+                awards_col.append(
+                    f"{source['award']} {source['category']} Win({source['winner_score']}), "
+                )
                 significance_col.append(source["winner_score"])
                 award_col.append(source["winner_score"])
             else:
-                awards_col.append(f"{source['award']} {source['category']} Nom({source['nominee_score']}), ")
+                awards_col.append(
+                    f"{source['award']} {source['category']} Nom({source['nominee_score']}), "
+                )
                 significance_col.append(source["nominee_score"])
                 award_col.append(source["nominee_score"])
         award_col_title = f"{source['award']} {source['category']} ({source['winner_score']}/{source['nominee_score']})"
         new_cols = {
             "Awards": awards_col,
             # Only used for joining; will be dropped later
-            "Category": [source['category'] for _ in range(table.shape[0])],
+            "Category": [source["category"] for _ in range(table.shape[0])],
             "Significance": significance_col,
             award_col_title: award_col,
         }
@@ -370,20 +437,24 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
         # add non-'(' to non-space to make it work.
         print("Removing trailing * from author names")
         table = table.replace(
-            to_replace={FINAL_AUTHOR_COLUMN_NAME: r'\*$'},
-            value={FINAL_AUTHOR_COLUMN_NAME: r''},
+            to_replace={FINAL_AUTHOR_COLUMN_NAME: r"\*$"},
+            value={FINAL_AUTHOR_COLUMN_NAME: r""},
             regex=True,
         )
         print("Changing author names to last, first")
         table = table.replace(
-            to_replace={FINAL_AUTHOR_COLUMN_NAME: r'(.*) ([^ (]+( \(translator\))?)'},
-            value={FINAL_AUTHOR_COLUMN_NAME: r'\2, \1'},
+            to_replace={FINAL_AUTHOR_COLUMN_NAME: r"(.*) ([^ (]+( \(translator\))?)"},
+            value={FINAL_AUTHOR_COLUMN_NAME: r"\2, \1"},
             regex=True,
         )
         # Special case: Ursula K. Le Guin
         table = table.replace(
-            to_replace={FINAL_AUTHOR_COLUMN_NAME: "Guin, Ursula K. Le",},
-            value={FINAL_AUTHOR_COLUMN_NAME: "Le Guin, Ursula K.",},
+            to_replace={
+                FINAL_AUTHOR_COLUMN_NAME: "Guin, Ursula K. Le",
+            },
+            value={
+                FINAL_AUTHOR_COLUMN_NAME: "Le Guin, Ursula K.",
+            },
         )
 
         # Combine like entries
@@ -397,7 +468,9 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
             collected_table = resolve_duplicates(collected_table, table)
 
     print("Final cleanup")
-    collected_table = collected_table.replace(to_replace={"Awards": r", $"}, value={"Awards": r""}, regex=True)
+    collected_table = collected_table.replace(
+        to_replace={"Awards": r", $"}, value={"Awards": r""}, regex=True
+    )
     collected_table = collected_table.drop("Category", axis=1)
     collected_table["Significance"] = collected_table["Significance"].astype(int)
 
@@ -406,8 +479,12 @@ async def main(configfile, force_refetch, infile, loglevel, outfile):
 
     # Sort it out
     print("Sorting data")
-    collected_table = collected_table.sort_values(by=["Year", "WhenRead"],)
-    collected_table = collected_table.sort_values(by=["Significance", "Rating", "Awards"], ascending=False)
+    collected_table = collected_table.sort_values(
+        by=["Year", "WhenRead"],
+    )
+    collected_table = collected_table.sort_values(
+        by=["Significance", "Rating", "Awards"], ascending=False
+    )
 
     # Write it down
     print("Writing csv")
