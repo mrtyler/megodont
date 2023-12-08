@@ -30,8 +30,8 @@ If you're in a hurry, you can raw-dog it and go straight to the `pip install` st
 ```
 pyenv virtualenv megodont
 pyenv activate megodont
-pip install -r requirements.txt
-./megodont.py
+pip install tox
+tox run -e run  # Or pass arguments like tox run -e run -- --loglevel debug
 vi Megodont.csv  # Generated with the default config
 ```
 
@@ -40,13 +40,18 @@ vi Megodont.csv  # Generated with the default config
 Megodont will attempt to merge user-generated data from an existing spreadsheet.
 
 ```
-./megodont.py --infile Megodont-with-my-ratings-and-notes.csv
+tox run -e run ---- --infile Megodont-with-my-ratings-and-notes.csv
 ```
 
 Any rows with user-generated data that can't be merged with the (possibly updated) base spreadsheet are appended to the end. A [design principle](DEVELOPMENT.md) of Megodont is that it must not discard user-generated data!
 
 
 ## Development
+
+```
+tox  # Runs format (lint) and test (pytest + flake8)
+tox run -e e2e  # Runs end-to-end tests
+```
 
 
 ## FAQ
@@ -63,7 +68,7 @@ Any rows with user-generated data that can't be merged with the (possibly update
 
 ## History
 
-This project came over from internal repo `2022-aoc`, which started as a place to hold my 2022 Advent of Code exercises and evolved to host a few random things.
+This project came over from internal repo `2022-aoc`, which started as a place to hold my 2022 [[Advent of Code]] exercises and evolved to host a few random things.
 
 This included a script `wikipedia_books.py` where I learned that [[pandas]] can extract CSVs from HTML tables and do a bunch of other data manipulation stuff. This script helped me scratch an itch:
 
