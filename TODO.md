@@ -17,10 +17,33 @@ Here's a collection of things I'm at least thinking about before initial release
 ** ~Use aiohttp for better performance later. Add conservative throttling~
 
 * Resolve the Beggars In Spain problem
+** This problem is named after Nancy Kress, who wrote a 1992 Novella and then a 1994 Novel called Beggars in Spain. With these records combined, the work had the highest Significance Score (Hugo/Nebula Novella wins and Novel nominations == 10+10+4+4 == 28 v0 SS) edging out Kim Stanley Robinson's Green Mars.(23 v0 SS).
+** ~One file but join on category so they stay separate~
+*** -1966.0,"Davidson, Avram",Rogue Dragon,,4.0,,,,,4.0,,8.0,"Nebula Novel Nom(4), Nebula N'ella Nom(4)",0.0,,
+
 ** Separate files per category?
-** One file but join on category so they stay separate?
 ** Configurable behavior for this choice?
 ** Grab everything and filter at the end or go category by cateory through `config[*]["category"]`?
+** SOON this is pulled from the join_columns area: ```
+    # if not --merge-across-categories, .append()
+    # and/or do the logic to deal with years but idk seems fragile anyway (beggars in spain is 1992/1994 already lol)
+```
+
+* ~Add [[tox]] as a task runner~
+** ~Formatting, linting, pytest (tho still no unit tests).
+** ~Basic end-to-end test exercising the command-line interface, `--infile`, `--outfile`, and data merging. Uses `git diff` to view/manage format changes.~
+
+** google sheets round trip might wait a minute to get automated. i can do fewer checks there, manually, until things stabilizie a bit more, maybe? i guess it's solving the publish problem one way or another
+** i guess the main part is wiring up tox, about which i watched some videos. i think a bare root venv followed by a rich baseenv venv followed by very thin test, etc. (pytest, gh, aws type modules) might be good. maybe more formal (tho basic) module/setuptools packaging? the tox guy likes this a lot. pip --editable?!
+
+* ~Google Drive integration~
+** NEXT do full service account auth loop. it appears to work from the file list but not from my drive view. permissions issue maybe?
+** NEXT pull id/password bits from environment
+** NEXT upload csv with timestamp (and maybe git sha or tag or something)
+** NEXT get link back to uploaded csv. add to docs somewhere maybe?
+** NEXT link to megodont folder sorted by timestamp so latest is on top
+** SOON Lock down Service Account to just Drive / Megodont folder
+** SOON include more version info as fake row in .csv?
 
 * CI/CD and Releases
 ** Github Actions seems simple/easy enough
@@ -42,6 +65,7 @@ if response.status not in (200, 429,):
 ** LATER support file:/// (maybe specially as i guess aiohttp isn't smart enough? or maybe i need that third / and an absolute path?) or some other way to specify non-http data sources
 ** LATER setuptools or whatever wrapper can be the undecorated megodont entry point.
 ** LATER remove my real ratings and such for better/smaller surface area'd canned data?
+** LATER --infile merge is just scratch mode plus merging. that step is cacheable, which would also make e2e faster
 
 * Docs
 ** Mostly links and how the above implemented stuff works
