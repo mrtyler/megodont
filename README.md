@@ -1,5 +1,7 @@
 # Megodont
 
+[![Megodont](https://github.com/mrtyler/megodont/actions/workflows/python-app.yml/badge.svg)](https://github.com/mrtyler/megodont/actions/workflows/python-app.yml)
+
 Megodont collects a dataset from multiple locations, de-dupes and filters the data, and creates a spreadsheet of the data including a Significance Score based on where and how often members were mentioned.
 
 I wrote it to make a spreadsheet of novels (and shorter works) that won or were nominated for the Hugo, Nebula, Locus, and other well-known awards.
