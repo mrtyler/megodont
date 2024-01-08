@@ -1,3 +1,6 @@
+import base64
+import os
+
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
@@ -16,7 +19,8 @@ def login_with_service_account():
     settings = {
         "client_config_backend": "service",
         "service_config": {
-            "client_json_file_path": "megodont-uploader-credentials.json",
+            #"client_json_file_path": "megodont-uploader-credentials.json",
+            "client_json": base64.b64decode(os.getenv("MEGODONT_UPLOADER_CREDS"))
         },
     }
     # Create instance of GoogleAuth
@@ -26,26 +30,21 @@ def login_with_service_account():
     return gauth
 
 
-# from pydrive2.auth import GoogleAuth
-# from pydrive2.drive import GoogleDrive
-#
-# gauth = GoogleAuth()
-# # Create local webserver and auto handles authentication.
-# #gauth.LocalWebserverAuth()
-#
-# gauth.LoadClientConfigFile()
-
-
 gauth = login_with_service_account()
 drive = GoogleDrive(gauth)
 
-file1 = drive.CreateFile(
-    {"title": "Hello2.txt"}
-)  # Create GoogleDriveFile instance with title 'Hello.txt'.
-file1.SetContentString("Hello World!")  # Set content of the file from given string.
-file1.Upload()
+folder = "1Cy_tDSCjugdh-Eg8Ds5-a1F3XF9JQ1R5"
+
+upload_me = drive.CreateFile({
+    "title": "Hello-megodont.txt",
+    "parents": [{"id": folder}],
+})
+import datetime
+upload_me.SetContentString(f"Hello World! {datetime.datetime.now().isoformat()}")  # Set content of the file from given string.
+upload_me.Upload()
 
 # Auto-iterate through all files that matches this query
-file_list = drive.ListFile({"q": "'root' in parents and trashed=false"}).GetList()
+print(f"### FOLDER {folder} LIST ###")
+file_list = drive.ListFile({"q": f"'{folder}' in parents and trashed=false"}).GetList()
 for file1 in file_list:
     print("title: %s, id: %s" % (file1["title"], file1["id"]))
