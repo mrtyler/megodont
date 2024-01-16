@@ -4,6 +4,8 @@ import os
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
+import defaults
+
 
 def login_with_service_account():
     """
@@ -20,12 +22,11 @@ def login_with_service_account():
         "client_config_backend": "service",
         "service_config": {},
     }
-    creds = os.getenv("MEGODONT_UPLOADER_CREDS")
+    creds = os.getenv(defaults.creds_env_var)
     if creds:
         settings["service_config"]["client_json"] = base64.b64decode(creds)
     else:
-        creds_file = "megodont-uploader-credentials.json"
-        if os.path.exists(creds_file):
+        if os.path.exists(defaults.creds_file):
             settings["service_config"]["client_json_file_path"] = creds_file
         else:
             raise ValueError(f"Couldn't find creds in env var '$MEGODONT_UPLOADER_CREDS' nor in '{creds_file}'")

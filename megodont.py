@@ -15,6 +15,8 @@ import asyncio
 import click
 import pandas as pd
 
+import defaults
+
 
 CACHE_DIR_NAME = "_cache"
 CACHE_FILE_MAX_AGE_DAYS = 1
@@ -267,7 +269,7 @@ def merge_or_init_human_columns(collected_table, infile):
 )
 @click.option(
     "--outfile",
-    default="Megodont.csv",
+    default=defaults.outfile,
     show_default=True,
     help="Where to write the data at the end",
 )
