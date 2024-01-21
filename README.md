@@ -80,6 +80,8 @@ Around 2022, I wanted to re-focus my explosively-grown To Be Read list a bit. I 
 
 But what of the next tier down? Surely, after the books that won both awards, the next most Significant books are those that won one award while being nominated for the other. And what if, to break the tie amongst all those works, we could use a less-famous award?
 
+And so, Megodont was born.
+
 ### Archaeology
 
 I extracted these commits from `2022-aoc` using [[https://stackoverflow.com/questions/1365541/how-to-move-some-files-from-one-git-repo-to-another-not-a-clone-preserving-hi]]. Specifially the one liner: `git log --pretty=email --patch-with-stat --reverse --full-index --binary -m --first-parent -- path/to/file_or_folder | (cd /path/to/new_repository && git am --committer-date-is-author-date)`. This version is tagged as `0.0.0`.

@@ -1,5 +1,7 @@
 import base64
+import datetime
 import os
+import subprocess
 
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
@@ -38,21 +40,30 @@ def login_with_service_account():
     return gauth
 
 
-gauth = login_with_service_account()
-drive = GoogleDrive(gauth)
+def upload():
+    gauth = login_with_service_account()
+    drive = GoogleDrive(gauth)
 
-folder = "1Cy_tDSCjugdh-Eg8Ds5-a1F3XF9JQ1R5"
+    with open(defaults.outfile) as ff:
+        contents = ff.read()
 
-upload_me = drive.CreateFile({
-    "title": "Hello-megodont.txt",
-    "parents": [{"id": folder}],
-})
-import datetime
-upload_me.SetContentString(f"Hello World! {datetime.datetime.now().isoformat()}")  # Set content of the file from given string.
-upload_me.Upload()
+    commit = subprocess.run("git rev-parse HEAD".split(), stdout=subprocess.PIPE).stdout.decode('utf-8')[:6]
+    timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d-%H%M%S")
+    title = f"Megodont {timestamp}-{commit}.csv"
+    upload_me = drive.CreateFile({
+        "title": title,
+        "parents": [{"id": defaults.folder}],
+        #"mimeType": "application/vnd.google-apps.spreadsheet",
+        "mimeType": "text/csv",
+    })
+    upload_me.SetContentString(contents)
+    upload_me.Upload()
 
-# Auto-iterate through all files that matches this query
-print(f"### FOLDER {folder} LIST ###")
-file_list = drive.ListFile({"q": f"'{folder}' in parents and trashed=false"}).GetList()
-for file1 in file_list:
-    print("title: %s, id: %s" % (file1["title"], file1["id"]))
+
+    file_list = drive.ListFile({"q": f"'{defaults.folder}' in parents and trashed=false"}).GetList()
+    for file1 in file_list:
+        print("title: %s, id: %s" % (file1["title"], file1["id"]))
+
+
+if __name__ == "__main__":
+    upload()
