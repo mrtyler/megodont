@@ -1,8 +1,12 @@
+#!/usr/bin/env python
+
+
 import base64
 import datetime
 import os
 import subprocess
 
+import click
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 
@@ -29,9 +33,9 @@ def login_with_service_account():
         settings["service_config"]["client_json"] = base64.b64decode(creds)
     else:
         if os.path.exists(defaults.creds_file):
-            settings["service_config"]["client_json_file_path"] = creds_file
+            settings["service_config"]["client_json_file_path"] = defaults.creds_file
         else:
-            raise ValueError(f"Couldn't find creds in env var '$MEGODONT_UPLOADER_CREDS' nor in '{creds_file}'")
+            raise ValueError(f"Couldn't find creds in env var '$MEGODONT_UPLOADER_CREDS' nor in '{defaults.creds_file}'")
 
     # Create instance of GoogleAuth
     gauth = GoogleAuth(settings=settings)
@@ -40,16 +44,28 @@ def login_with_service_account():
     return gauth
 
 
-def upload():
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option(
+    "--file",
+    default=defaults.outfile,
+    show_default=True,
+    help="File to upload",
+)
+def upload(file):
     gauth = login_with_service_account()
     drive = GoogleDrive(gauth)
 
-    with open(defaults.outfile) as ff:
+    with open(file) as ff:
         contents = ff.read()
 
     commit = subprocess.run("git rev-parse HEAD".split(), stdout=subprocess.PIPE).stdout.decode('utf-8')[:6]
     timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d-%H%M%S")
-    title = f"Megodont {timestamp}-{commit}.csv"
+    title = f"{".".join(file.split('.')[:-1])} {timestamp}-{commit}.csv"
     upload_me = drive.CreateFile({
         "title": title,
         "parents": [{"id": defaults.folder}],
@@ -58,7 +74,13 @@ def upload():
     })
     upload_me.SetContentString(contents)
     upload_me.Upload()
+    print(f"Uploaded {title}")
 
+
+@cli.command()
+def show():
+    gauth = login_with_service_account()
+    drive = GoogleDrive(gauth)
 
     file_list = drive.ListFile({"q": f"'{defaults.folder}' in parents and trashed=false"}).GetList()
     for file1 in file_list:
@@ -66,4 +88,4 @@ def upload():
 
 
 if __name__ == "__main__":
-    upload()
+    cli()
