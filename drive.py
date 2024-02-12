@@ -35,7 +35,9 @@ def login_with_service_account():
         if os.path.exists(defaults.creds_file):
             settings["service_config"]["client_json_file_path"] = defaults.creds_file
         else:
-            raise ValueError(f"Couldn't find creds in env var '${defaults.creds_env_var}' nor in file '{defaults.creds_file}'")
+            raise ValueError(
+                f"Couldn't find creds in env var '${defaults.creds_env_var}' nor in file '{defaults.creds_file}'"
+            )
 
     # Create instance of GoogleAuth
     gauth = GoogleAuth(settings=settings)
@@ -63,15 +65,19 @@ def upload(file):
     with open(file) as ff:
         contents = ff.read()
 
-    commit = subprocess.run("git rev-parse HEAD".split(), stdout=subprocess.PIPE).stdout.decode('utf-8')[:6]
+    commit = subprocess.run(
+        "git rev-parse HEAD".split(), stdout=subprocess.PIPE
+    ).stdout.decode("utf-8")[:6]
     timestamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d-%H%M%S")
-    title = f"{".".join(file.split('.')[:-1])} {timestamp}-{commit}.csv"
-    upload_me = drive.CreateFile({
-        "title": title,
-        "parents": [{"id": defaults.folder}],
-        #"mimeType": "application/vnd.google-apps.spreadsheet",
-        "mimeType": "text/csv",
-    })
+    title = f"{'.'.join(file.split('.')[:-1])} {timestamp}-{commit}.csv"
+    upload_me = drive.CreateFile(
+        {
+            "title": title,
+            "parents": [{"id": defaults.folder}],
+            # "mimeType": "application/vnd.google-apps.spreadsheet",
+            "mimeType": "text/csv",
+        }
+    )
     upload_me.SetContentString(contents)
     upload_me.Upload()
     print(f"Uploaded {title}")
@@ -82,7 +88,9 @@ def show():
     gauth = login_with_service_account()
     drive = GoogleDrive(gauth)
 
-    file_list = drive.ListFile({"q": f"'{defaults.folder}' in parents and trashed=false"}).GetList()
+    file_list = drive.ListFile(
+        {"q": f"'{defaults.folder}' in parents and trashed=false"}
+    ).GetList()
     for file1 in file_list:
         print("title: %s, id: %s" % (file1["title"], file1["id"]))
 
