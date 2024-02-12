@@ -35,7 +35,7 @@ def login_with_service_account():
         if os.path.exists(defaults.creds_file):
             settings["service_config"]["client_json_file_path"] = defaults.creds_file
         else:
-            raise ValueError(f"Couldn't find creds in env var '$MEGODONT_UPLOADER_CREDS' nor in '{defaults.creds_file}'")
+            raise ValueError(f"Couldn't find creds in env var '${defaults.creds_env_var}' nor in file '{defaults.creds_file}'")
 
     # Create instance of GoogleAuth
     gauth = GoogleAuth(settings=settings)
