@@ -1,4 +1,7 @@
 /*.csv
 *.csv.[0-9]
 _cache/
+megodont-uploader-credentials.json
 old_csv/
+tmp/
+*.tmp
