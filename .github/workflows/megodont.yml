@@ -31,7 +31,6 @@ jobs:
       run: |
         tox
     - name: e2e
-      environment: drive
       env:
         MEGODONT_UPLOADER_CREDS: ${{ secrets.MEGODONT_UPLOADER_CREDS }}
       run: |
