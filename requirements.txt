@@ -3,4 +3,5 @@ beautifulsoup4  # for pandas
 click
 html5lib  # for pandas
 pandas
+Pyarrow  # for pandas
 pydrive2
